@@ -1,0 +1,19 @@
+name: 🐛 Bug
+description: 버그를 제보하고 수정이 필요할 때 사용하세요.
+title: "[🐛 Bug] "
+labels: ["🐛 Bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 🤷‍♂️ Description
+      description: 이슈 내용에 대해서 작성해주세요(선택)
+      placeholder: |
+        ex)
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ✅ 이슈 생성 시 오른쪽 옵션들 (Assignee)도 함께 확인해 주세요!

@@ -1,0 +1,19 @@
+name: ✨ Feature
+description: 새로운 기능이나 명세가 있나요?
+title: "[✨ Feature] "
+labels: ["✨ Feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 🤷‍♂️ Description
+      description: 이슈 내용에 대해서 작성해주세요(선택)
+      placeholder: |
+        ex)
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ✅ 이슈 생성 시 오른쪽 옵션들 (Assignee)도 함께 확인해 주세요!

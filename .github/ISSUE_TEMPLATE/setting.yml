@@ -1,0 +1,19 @@
+name: ⚙️ Setting
+description: 프로젝트 설정 관련 변경 사항을 기록할 때 사용하세요.
+title: "[⚙️ Setting] "
+labels: ["⚙️ Setting"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 🤷‍♂️ Description
+      description: 이슈 내용에 대해서 작성해주세요(선택)
+      placeholder: |
+        ex)
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ✅ 이슈 생성 시 오른쪽 옵션들 (Assignee)도 함께 확인해 주세요!

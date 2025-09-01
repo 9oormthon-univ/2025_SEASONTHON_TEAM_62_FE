@@ -1,0 +1,19 @@
+name: 🔁 Refactor
+description: 코드 구조 개선이나 리팩터링이 필요한 경우 사용하세요.
+title: "[🔁 Refactor] "
+labels: ["🔁 Refactor"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 🤷‍♂️ Description
+      description: 이슈 내용에 대해서 작성해주세요(선택)
+      placeholder: |
+        ex)
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ✅ 이슈 생성 시 오른쪽 옵션들 (Assignee)도 함께 확인해 주세요!
