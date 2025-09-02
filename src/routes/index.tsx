@@ -4,7 +4,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 
 import HomePage from '../pages/home/HomePage';
 import SplashPage from '../pages/splash/SplashPage';
-import OnboardingPage from '../pages/onboarding/onboardingPage';
+import OnBoardingPage from '../pages/onboarding/OnBoardingPage';
 
 export const router = createBrowserRouter([
   {
@@ -14,7 +14,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'splash', element: <SplashPage /> },
-      { path: 'onboarding', element: <OnboardingPage /> },
+      { path: 'onboarding', element: <OnBoardingPage /> },
     ],
   },
 ]);
