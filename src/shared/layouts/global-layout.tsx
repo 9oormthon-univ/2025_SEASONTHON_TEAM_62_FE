@@ -13,7 +13,9 @@ export default function GlobalLayout({ children }: PropsWithChildren) {
       <div className="flex flex-col w-full mx-auto min-w-[375px] max-w-[430px] min-h-[100dvh]">
         <main className={'flex-1'}>{children ?? <Outlet />}</main>
         {showBottom && (
-          <div className="sticky bottom-0 h-17 bg-gray-100">하단바</div>
+          <nav className="sticky bottom-0 h-[68px] bg-gray-100 border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
+            하단바
+          </nav>
         )}
       </div>
     </Suspense>
