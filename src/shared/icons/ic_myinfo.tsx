@@ -1,12 +1,12 @@
 import type { SVGProps } from 'react';
 
-const IcSvgMyinfoW = (props: SVGProps<SVGSVGElement>) => (
+const IcSvgMyinfo = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 32 32"
     {...props}
-  >
+   color="currentColor">
     <path
       stroke="currentColor"
       strokeLinejoin="round"
@@ -20,4 +20,4 @@ const IcSvgMyinfoW = (props: SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
-export default IcSvgMyinfoW;
+export default IcSvgMyinfo;

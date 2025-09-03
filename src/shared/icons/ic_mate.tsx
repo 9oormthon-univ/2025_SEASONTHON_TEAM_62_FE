@@ -1,16 +1,16 @@
 import type { SVGProps } from 'react';
 
-const IcSvgMateW = (props: SVGProps<SVGSVGElement>) => (
+const IcSvgMate = (props: SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 32 32"
     {...props}
-  >
+   color="currentColor">
     <g
       stroke="currentColor"
       strokeWidth={1.5}
-      clipPath="url(#mate_w_svg__a)"
+      clipPath="url(#mate_svg__a)"
     >
       <path
         strokeLinejoin="round"
@@ -23,13 +23,13 @@ const IcSvgMateW = (props: SVGProps<SVGSVGElement>) => (
       />
     </g>
     <defs>
-      <clipPath id="mate_w_svg__a">
+      <clipPath id="mate_svg__a">
         <path
-          fill="#fff"
+          fill="currentColor"
           d="M0 0h32v32H0z"
         />
       </clipPath>
     </defs>
   </svg>
 );
-export default IcSvgMateW;
+export default IcSvgMate;
