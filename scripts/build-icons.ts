@@ -67,8 +67,8 @@ async function main() {
     // svgr 실행
     execFileSync(svgrCmd, svgrArgs, { stdio: 'inherit' });
 
-    // 생성된(이번에 svgr가 만든) 파일만 읽기
-    let generatedFiles = (await fs.readdir(ICONS_DIR)).filter(
+    // 생성된 파일만 읽기
+    const generatedFiles = (await fs.readdir(ICONS_DIR)).filter(
       (f) => f.endsWith('.tsx') && !f.startsWith('index'),
     );
 
@@ -90,17 +90,46 @@ async function main() {
 
       let content = await fs.readFile(newPath, 'utf8');
 
+      // 1) stroke → currentColor
       content = content.replace(
         /(stroke)=['"]([^'"]+)['"]/g,
         (_m, p1) => `${p1}="currentColor"`,
       );
+
+      // 2) fill(=none 제외) → currentColor
+      content = content.replace(
+        /(fill)=['"](?!none['"])([^'"]+)['"]/g,
+        (_m, p1) => `${p1}="currentColor"`,
+      );
+
+      // 3) style 속성 안의 fill: ... → currentColor (none은 유지)
+      content = content.replace(/style=(['"])([^'"]*)\1/g, (m, q, body) => {
+        const replaced = body.replace(
+          /fill:\s*(?!none\b)[#a-zA-Z0-9().%,-]+/g,
+          'fill: currentColor',
+        );
+        return `style=${q}${replaced}${q}`;
+      });
+
+      // 4) 루트 <svg>에 color="currentColor" 없으면 추가 (상속 보장)
+      if (!/color=['"]currentColor['"]/.test(content)) {
+        content = content.replace(
+          /<svg\b([^>]*)>/,
+          (_m, attrs) => `<svg${attrs} color="currentColor">`,
+        );
+      }
+
+      // 5) 불필요한 React 전체 import 제거 (svgr 기본 산출물 정리)
       content = content.replace(/^import \* as React from 'react';\r?\n/m, '');
+
+      // 6) 컴포넌트 이름 정리
       content = content.replace(/const Svg[^ ]+ =/, `const ${componentName} =`);
       content = content.replace(
         /export default Svg[^;]+;/,
         `export default ${componentName};`,
       );
 
+      // 7) import type 위치 정리(가독성)
       const importMatch = content.match(
         /^(import type \{ SVGProps \} from 'react';\r?\n)/m,
       );
@@ -108,7 +137,7 @@ async function main() {
         content = content.replace(importMatch[0], `${importMatch[0]}\n`);
       }
 
-      await fs.writeFile(newPath, content);
+      await fs.writeFile(newPath, content, 'utf8');
 
       const line = `export { default as ${componentName} } from './${newFileName.replace('.tsx', '')}';`;
       if (!exportSet.has(line)) {
