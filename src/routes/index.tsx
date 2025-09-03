@@ -4,7 +4,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 
 import HomePage from '../pages/home/HomePage';
 import SplashPage from '../pages/splash/SplashPage';
-import OnBoardingPage from '../pages/onboarding/OnBoardingPage';
+import OnBoardingPage from '../pages/onboarding/OnboardingPage';
 
 export const router = createBrowserRouter([
   {
