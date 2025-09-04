@@ -6,6 +6,7 @@ import HomePage from '../pages/home/HomePage';
 import SplashPage from '../pages/splash/SplashPage';
 import LoginPage from '../pages/login/LoginPage';
 import MatePage from '../pages/mate/MatePage';
+import RunningPage from '../pages/running/page';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { path: 'splash', element: <SplashPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'mate', element: <MatePage /> },
+      { path: 'running', element: <RunningPage /> },
     ],
   },
 ]);
