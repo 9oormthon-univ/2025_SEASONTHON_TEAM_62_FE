@@ -9,8 +9,7 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],
-      "@/shared/icons": ["shared/icons"],
-      "@/shared/*": ["shared/*"]
+      "@/shared/icons": ["shared/icons"]
     },
 
     /* Bundler mode */
