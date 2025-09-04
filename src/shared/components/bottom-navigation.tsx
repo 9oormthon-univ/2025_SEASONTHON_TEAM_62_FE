@@ -73,7 +73,7 @@ const BottomNavigation = () => {
                 {isActive ? (
                   <IcSvgMateFull className="w-8 h-8 text-main1" />
                 ) : (
-                  <IcSvgMate className="w-8 h-8 text-main" />
+                  <IcSvgMate className="w-8 h-8 text-main1 " />
                 )}
                 <span>메이트</span>
               </>
