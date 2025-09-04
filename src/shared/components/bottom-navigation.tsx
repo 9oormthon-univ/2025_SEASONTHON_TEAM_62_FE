@@ -38,7 +38,7 @@ const BottomNavigation = () => {
         </li>
         <li className="pointer-events-none font-bold absolute left-1/2 -translate-x-1/2 -top-[20px] z-10">
           <NavLink
-            to="/running"
+            to="/"
             className={({ isActive }) =>
               [
                 'pointer-events-auto flex flex-col items-center justify-center w-[4.375rem] h-[4.375rem] rounded-full shadow-lg',
@@ -73,7 +73,7 @@ const BottomNavigation = () => {
                 {isActive ? (
                   <IcSvgMateFull className="w-8 h-8 text-main1" />
                 ) : (
-                  <IcSvgMate className="w-8 h-8 text-main" />
+                  <IcSvgMate className="w-8 h-8 text-main1 " />
                 )}
                 <span>메이트</span>
               </>
