@@ -1,5 +1,5 @@
 interface PostProps {
-  id: string;
+  //id: string;
   selected?: boolean;
   onClick?: () => void;
   level: '안전' | '보통' | '최단';
@@ -21,7 +21,7 @@ const levelStyleMap: Record<PostProps['level'], string> = {
 };
 
 const Post = ({
-  id,
+  //id,
   selected = false,
   onClick,
   level,
