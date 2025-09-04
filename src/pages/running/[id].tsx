@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
+import FloatingBackButton from './components/floatingButton';
 
 const mockRoute = {
   nodes: [{ id: 'start', lat: 35.8887, lng: 128.6111 }],
@@ -22,14 +23,17 @@ export default function DetailPage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 relative overflow-hidden">
+        <div className="absolute top-4 left-4 z-10">
+          <FloatingBackButton />
+        </div>
+
         <RouteFromLinks
           nodes={mockRoute.nodes}
           showEndPin={false}
         />
       </div>
-
-      <div className=" bg-white p-6">
+      <div className="bg-white p-6 rounded-t-md">
         <div className="mb-4 flex items-center gap-4">
           <label className="w-28 shrink-0 text-sem18 text-black">
             출발지점
