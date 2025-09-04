@@ -3,11 +3,14 @@ import { Outlet, useLocation } from 'react-router-dom';
 import type { PropsWithChildren } from 'react';
 import BottomNavigation from '../components/bottom-navigation';
 
-const HIDDEN_BOTTOM_PATHS = ['/splash', '/onboarding']; //하단바 안들어가는 곳
+const HIDDEN_BOTTOM_PATHS = ['/splash', '/onboarding'];
 
 export default function GlobalLayout({ children }: PropsWithChildren) {
   const { pathname } = useLocation();
-  const showBottom = !HIDDEN_BOTTOM_PATHS.includes(pathname);
+
+  const showBottom =
+    !HIDDEN_BOTTOM_PATHS.includes(pathname) &&
+    !pathname.startsWith('/running/');
 
   return (
     <Suspense>

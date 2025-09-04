@@ -30,6 +30,28 @@ export default {
       fontFamily: {
         sans: ['Pretendard', 'ui-sans-serif', 'system-ui'],
       },
+      fontSize: {
+        // Semibold
+        sem18: ['18px', { lineHeight: '28px', fontWeight: 600 }],
+        sem16: ['16px', { lineHeight: '24px', fontWeight: 600 }],
+        sem14: ['14px', { lineHeight: '20px', fontWeight: 600 }],
+        sem12: ['12px', { lineHeight: '16px', fontWeight: 600 }],
+        sem10: ['10px', { lineHeight: '14px', fontWeight: 600 }],
+
+        // Medium
+        med18: ['18px', { lineHeight: '28px', fontWeight: 500 }],
+        med16: ['16px', { lineHeight: '24px', fontWeight: 500 }],
+        med14: ['14px', { lineHeight: '20px', fontWeight: 500 }],
+        med12: ['12px', { lineHeight: '16px', fontWeight: 500 }],
+        med10: ['10px', { lineHeight: '14px', fontWeight: 500 }],
+
+        // Regular
+        reg18: ['18px', { lineHeight: '28px', fontWeight: 400 }],
+        reg16: ['16px', { lineHeight: '24px', fontWeight: 400 }],
+        reg14: ['14px', { lineHeight: '20px', fontWeight: 400 }],
+        reg12: ['12px', { lineHeight: '16px', fontWeight: 400 }],
+        reg10: ['10px', { lineHeight: '14px', fontWeight: 400 }],
+      },
     },
   },
   plugins: [],
