@@ -28,7 +28,7 @@ export default {
         black: '#1A1A1A',
       },
       fontFamily: {
-        pretendard: ['Pretendard', 'ui-sans-serif', 'system-ui'],
+        sans: ['Pretendard', 'ui-sans-serif', 'system-ui'],
       },
     },
   },
