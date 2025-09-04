@@ -60,7 +60,7 @@ const BottomNavigation = () => {
         </li>
         <li className="flex-1 h-full font-medium">
           <NavLink
-            to="/matePage"
+            to="/mate"
             className={({ isActive }) =>
               [
                 'block w-full h-full flex flex-col items-center pl-[2.18rem] justify-center py-0',

@@ -64,8 +64,13 @@ async function main() {
       'automatic',
     ];
 
-    // svgr 실행
-    execFileSync(svgrCmd, svgrArgs, { stdio: 'inherit' });
+    if (process.platform === 'win32') {
+      execFileSync('cmd.exe', ['/c', 'npx', '@svgr/cli', ...svgrArgs], {
+        stdio: 'inherit',
+      });
+    } else {
+      execFileSync(svgrCmd, svgrArgs, { stdio: 'inherit' });
+    }
 
     // 생성된 파일만 읽기
     const generatedFiles = (await fs.readdir(ICONS_DIR)).filter(
