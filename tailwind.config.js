@@ -16,7 +16,13 @@ export default {
         gray3: '#EAEAEA',
         gray4: '#EAEAEA',
 
+        red: '#E55B5B',
         safe: '#B3FFC6',
+        green: '#37DE61',
+        yellow1: '#FFDA46',
+        yellow2: '#FFFAB3',
+        orange1: '#FFA42C',
+        orange2: '#FFDFB3',
 
         white: '#FFFFFF',
         black: '#1A1A1A',

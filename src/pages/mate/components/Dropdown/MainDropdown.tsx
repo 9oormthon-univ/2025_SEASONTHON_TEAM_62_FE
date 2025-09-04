@@ -53,7 +53,7 @@ export default function MainDropDown() {
               />
               {minDistance && (
                 <button
-                  onClick={() => setMinDistance('')} // 첫 번째 입력값만 초기화
+                  onClick={() => setMinDistance('')} 
                   className="absolute right-2 top-1/2 -translate-y-1/2"
                 >
                   <IcSvgInputDelete
@@ -65,7 +65,6 @@ export default function MainDropDown() {
             </div>
             <span className="text-[14px] ">Km</span>
             <span className="text-[14px] mx-2">~</span>
-            {/* 두 번째 입력란 (최대 거리) */}
             <div className="relative">
               <input
                 type="text"
@@ -76,7 +75,7 @@ export default function MainDropDown() {
               />
               {maxDistance && (
                 <button
-                  onClick={() => setMaxDistance('')} // 두 번째 입력값만 초기화
+                  onClick={() => setMaxDistance('')} 
                   className="absolute right-2 top-1/2 -translate-y-1/2"
                 >
                   <IcSvgInputDelete

@@ -44,7 +44,7 @@ const BottomNavigation = () => {
                 'pointer-events-auto flex flex-col items-center justify-center w-[4.375rem] h-[4.375rem] rounded-full shadow-lg',
                 isActive
                   ? 'bg-main1 text-white font-bold'
-                  : 'bg-main1 text-white',
+                  : 'bg-main3 text-white',
               ].join(' ')
             }
           >
