@@ -4,8 +4,10 @@ import NotFoundPage from '../pages/NotFoundPage';
 
 import SplashPage from '../pages/splash/SplashPage';
 import LoginPage from '../pages/login/LoginPage';
-import MatePage from '../pages/mate/MatePage';
 import RunningPage from '../pages/running/page';
+import MatePage from '../pages/mate/page';
+import MyinfoPage from '../pages/myinfo/page';
+import DetailPage from '../pages/running/[id]';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +19,8 @@ export const router = createBrowserRouter([
       { path: 'splash', element: <SplashPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'mate', element: <MatePage /> },
+      { path: 'myinfo', element: <MyinfoPage /> },
+      { path: 'running/:id', element: <DetailPage /> },
     ],
   },
 ]);

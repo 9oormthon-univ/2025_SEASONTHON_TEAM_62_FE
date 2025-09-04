@@ -1,33 +1,41 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type RunningBottomSheetProps = {
   open: boolean;
-  onClose: () => void;
   children: React.ReactNode;
+  onInteractStart?: () => void;
+  onInteractEnd?: () => void;
+  dragZoneHeight?: number;
 };
 
 export function RunningBottomSheet({
   open,
   children,
+  onInteractStart,
+  onInteractEnd,
+  dragZoneHeight = 35,
 }: RunningBottomSheetProps) {
-  const [currentHeight, setCurrentHeight] = useState(200);
+  const [currentHeight, setCurrentHeight] = useState(280);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
-  const startHeight = useRef(250);
-  const minHeight = 250;
+  const startHeight = useRef(280);
+
+  const minHeight = 280;
   const maxHeight = 480;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const beginDrag = (clientY: number) => {
     setIsDragging(true);
-    startY.current = e.touches[0].clientY;
+    startY.current = clientY;
     startHeight.current = currentHeight;
+    onInteractStart?.();
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const updateDrag = (clientY: number, e?: Event) => {
     if (!isDragging) return;
-    e.preventDefault();
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
 
-    const deltaY = startY.current - e.touches[0].clientY;
+    const deltaY = startY.current - clientY;
     const newHeight = startHeight.current + deltaY;
 
     if (newHeight <= maxHeight && newHeight >= minHeight) {
@@ -35,10 +43,13 @@ export function RunningBottomSheet({
     }
   };
 
-  const handleTouchEnd = () => {
+  const endDrag = (e?: Event) => {
     if (!isDragging) return;
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
 
     setIsDragging(false);
+    onInteractEnd?.();
 
     if (currentHeight > (minHeight + maxHeight) / 2) {
       setCurrentHeight(maxHeight);
@@ -47,33 +58,85 @@ export function RunningBottomSheet({
     }
   };
 
+  useEffect(() => {
+    const onMove = (e: TouchEvent | MouseEvent) => {
+      if (!isDragging) return;
+      if ('touches' in e) {
+        updateDrag(e.touches[0].clientY, e);
+      } else {
+        updateDrag((e as MouseEvent).clientY, e);
+      }
+    };
+    const onEnd = (e: TouchEvent | MouseEvent) => {
+      if (!isDragging) return;
+      endDrag(e);
+    };
+
+    if (isDragging) {
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd, { passive: false });
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+    }
+    return () => {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+    };
+  }, [isDragging, currentHeight]);
+
+  const onDragTouchStart = (e: React.TouchEvent) => {
+    beginDrag(e.touches[0].clientY);
+  };
+  const onDragMouseDown = (e: React.MouseEvent) => {
+    beginDrag(e.clientY);
+  };
+
   return (
     <div
       className={[
-        'fixed inset-0 z-[0] transition-opacity duration-300 flex justify-center items-end',
+        'fixed inset-0 z-[0] flex items-end justify-center transition-opacity duration-300',
         open ? 'opacity-100' : 'pointer-events-none opacity-0',
       ].join(' ')}
+      style={{ pointerEvents: 'none' }}
     >
-      <div className="relative w-full min-w-[375px] max-w-[430px] border-t border-gray2 rounded-t-[20px]">
+      <div className="relative w-full min-w-[375px] max-w-[430px] rounded-t-[20px] border-t border-gray2">
         <div
           role="dialog"
           aria-modal="true"
           className={[
-            'relative w-full pb-[calc(env(safe-area-inset-bottom)+12px)]',
-            'rounded-t-[20px] bg-white pt-1',
+            'relative w-full rounded-t-[20px] bg-white',
+            'pb-[calc(env(safe-area-inset-bottom)+12px)]',
             'transform transition-transform duration-300',
             open ? 'translate-y-0' : 'translate-y-full',
+            'pointer-events-auto',
           ].join(' ')}
           style={{
             height: `${currentHeight}px`,
             transition: isDragging ? 'none' : 'height 0.3s ease-in-out',
+            touchAction: 'pan-y',
           }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
-          <div className="w-10 h-1 mt-3 bg-gray1/30 rounded-full mx-auto mb-3 cursor-grab" />
-          <div className="h-full overflow-y-auto">{children}</div>
+          <div
+            className="relative w-full"
+            style={{
+              height: dragZoneHeight,
+              touchAction: 'none',
+              userSelect: 'none',
+            }}
+            onTouchStart={onDragTouchStart}
+            onMouseDown={onDragMouseDown}
+          >
+            <div className="absolute left-1/2 top-2 h-1 w-10 -translate-x-1/2 rounded-full bg-gray1/30" />
+          </div>
+
+          <div
+            className="h-[calc(100%-var(--drag-zone))] overflow-y-auto"
+            style={{ ['--drag-zone' as any]: `${dragZoneHeight}px` }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
