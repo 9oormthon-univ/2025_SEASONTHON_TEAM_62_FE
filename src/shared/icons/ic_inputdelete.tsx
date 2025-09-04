@@ -6,17 +6,16 @@ const IcSvgInputDelete = (props: SVGProps<SVGSVGElement>) => (
     fill="none"
     viewBox="0 0 16 16"
     {...props}
-  >
+   color="currentColor">
     <circle
       cx={8}
       cy={8}
       r={8}
-      fill="#D9D9D9"
+      fill="currentColor"
     />
     <path
-      stroke="white"
+      stroke="currentColor"
       strokeLinecap="round"
-      strokeWidth="1.5"
       d="m5 5 6 6M11 5l-6 6"
     />
   </svg>
