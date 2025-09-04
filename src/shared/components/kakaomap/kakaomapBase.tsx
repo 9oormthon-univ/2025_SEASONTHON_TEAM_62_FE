@@ -10,7 +10,7 @@ export default function KakaoMapBasic() {
 
   const [me, setMe] = useState<LatLng | null>(null);
   const [center, setCenter] = useState<LatLng>({ lat: 37.5665, lng: 126.978 }); // 초기: 서울
-  const [ready, setReady] = useState(false);
+  const [_, setReady] = useState(false);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
