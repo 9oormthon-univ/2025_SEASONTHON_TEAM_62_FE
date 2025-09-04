@@ -2,6 +2,9 @@
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
+    screens: {
+      mobile: '375px',
+    },
     extend: {
       colors: {
         main1: '#28097C',
@@ -11,7 +14,7 @@ export default {
         gray1: '#767676',
         gray2: '#D9D9D9',
         gray3: '#EAEAEA',
-        gray4: '#EAEAEA', 
+        gray4: '#EAEAEA',
 
         safe: '#B3FFC6',
 
