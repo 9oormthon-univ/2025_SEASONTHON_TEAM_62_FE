@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tag } from './Tag';
-import { IcSvgInputDelete } from '../../../../shared/icons';
+import { IcSvgInputDelete } from '@/shared/icons';
 
 export default function MainDropDown() {
   const [isDistanceSelected, setDistanceSelected] = useState(false);
@@ -53,7 +53,7 @@ export default function MainDropDown() {
               />
               {minDistance && (
                 <button
-                  onClick={() => setMinDistance('')} 
+                  onClick={() => setMinDistance('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2"
                 >
                   <IcSvgInputDelete
@@ -75,7 +75,7 @@ export default function MainDropDown() {
               />
               {maxDistance && (
                 <button
-                  onClick={() => setMaxDistance('')} 
+                  onClick={() => setMaxDistance('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2"
                 >
                   <IcSvgInputDelete
