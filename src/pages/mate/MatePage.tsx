@@ -1,3 +1,10 @@
+import MainComponent from './components/Dropdown/MainDropdown';
+
 export default function MatePage() {
-  return <main className="p-4">메이트</main>;
+  return (
+    <div className="p-4">
+      메이트
+      <MainComponent />
+    </div>
+  );
 }
