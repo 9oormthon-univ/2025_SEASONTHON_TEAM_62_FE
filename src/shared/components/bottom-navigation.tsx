@@ -38,13 +38,13 @@ const BottomNavigation = () => {
         </li>
         <li className="pointer-events-none font-bold absolute left-1/2 -translate-x-1/2 -top-[20px] z-10">
           <NavLink
-            to="/runningPage"
+            to="/running"
             className={({ isActive }) =>
               [
                 'pointer-events-auto flex flex-col items-center justify-center w-[4.375rem] h-[4.375rem] rounded-full shadow-lg',
                 isActive
                   ? 'bg-main1 text-white font-bold'
-                  : 'bg-main1 text-white',
+                  : 'bg-main3 text-white',
               ].join(' ')
             }
           >

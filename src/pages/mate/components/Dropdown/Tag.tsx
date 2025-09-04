@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { IcSvgDropdown } from '../../../../shared/icons';
 import { BottomSheet } from './BottomSheet';
+import { IcSvgDropdown } from '@/shared/icons';
 
 type TagProps = {
   label: string;
