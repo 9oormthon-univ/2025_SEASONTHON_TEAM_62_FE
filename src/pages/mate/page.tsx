@@ -5,6 +5,16 @@ import Input from '../../shared/components/input';
 import { reverseGeocode } from '../../shared/lib/kakaoGeocoder';
 import MainDropDown from './components/Dropdown/MainDropdown';
 import FloatingActions from './components/FloatingButton';
+import { formatTime } from '../../shared/lib/dateFormat';
+
+function mapSafetyLevel(s: unknown): '안전' | '보통' | '최단' {
+  const v = String(s ?? '')
+    .toLowerCase()
+    .trim();
+  if (['safe', '안전', 'low', 'easy'].includes(v)) return '안전';
+  if (['shortest', '최단', 'short', 'fast'].includes(v)) return '최단';
+  return '보통';
+}
 
 export default function MatePage() {
   const [data, setData] = useState<any[]>([]);
@@ -31,10 +41,18 @@ export default function MatePage() {
     async function loadCrews() {
       try {
         const res = await api.get('/api/test/crews');
-        const crews = Array.isArray(res.data) ? res.data : [];
-        setData(crews);
+        const crews = Array.isArray(res.data?.crews) ? res.data.crews : [];
+        console.log('✅ 응답 성공:', res.status, res.data);
+
+        const mapped = crews.map((c: any) => ({
+          ...c,
+          startTime: formatTime(c.startTime),
+          level: mapSafetyLevel(c.safetyLevel),
+        }));
+
+        setData(mapped);
       } catch (err) {
-        console.error(err);
+        console.error('❌ 요청 실패:', err);
         setData([]);
       }
     }
@@ -52,25 +70,27 @@ export default function MatePage() {
         onSubmit={() => {}}
       />
       <MainDropDown />
-      {data.length === 0 ? (
-        <div className="text-gray-500">모집 중인 메이트가 없어요.</div>
-      ) : (
-        data.map((crew: any) => (
-          <Post
-            key={crew.id}
-            id={crew.id}
-            level={crew.level}
-            title={crew.title}
-            distanceFromHere={crew.distanceFromHere}
-            distance={crew.distance}
-            pace={crew.pace}
-            startTime={crew.startTime}
-            tags={crew.tags || []}
-            participants={crew.participants}
-            maxParticipants={crew.maxParticipants}
-          />
-        ))
-      )}
+      <div className="flex flex-col px-4 gap-1">
+        {data.length === 0 ? (
+          <div className="text-gray-500">모집 중인 메이트가 없어요.</div>
+        ) : (
+          data.map((crew: any) => (
+            <Post
+              key={crew.id}
+              id={crew.id}
+              level={crew.level}
+              title={crew.title}
+              distanceFromHere={crew.distanceFromHere}
+              distance={crew.distance}
+              pace={crew.pace}
+              startTime={crew.startTime}
+              tags={crew.tags || []}
+              participants={crew.participants}
+              maxParticipants={crew.maxParticipants}
+            />
+          ))
+        )}
+      </div>
       <FloatingActions />
     </div>
   );
