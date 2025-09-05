@@ -1,6 +1,7 @@
 // (auto-generated) Do not edit manually.
 // Run `pnpm svgr` to regenerate.
 
+export { default as IcSvgArrow } from './ic_arrow';
 export { default as IcSvgDropdown } from './ic_dropdown';
 export { default as IcSvgInputDelete } from './ic_inputdelete';
 export { default as IcSvgLeftArrow } from './ic_leftarrow';

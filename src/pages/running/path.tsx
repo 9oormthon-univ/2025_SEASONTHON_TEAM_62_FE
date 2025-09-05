@@ -180,7 +180,6 @@ export default function PathPage() {
   const [selectedId, setSelectedId] = useState<'safe' | 'normal' | 'fast'>(
     'safe',
   );
-  const selected = planCards.find((p) => p.id === selectedId)!;
 
   const links: GraphLink[] = useMemo(
     () => buildLinksByPlan(selectedId),
