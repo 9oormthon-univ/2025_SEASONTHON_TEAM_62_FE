@@ -1,7 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
+import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
+import StartRunModal from './components/startRunModal';
 
 type LatLng = { lat: number; lng: number };
 type GraphNode = { id: string; lat: number; lng: number };
@@ -12,7 +15,6 @@ type GraphLink = {
   geometry?: LatLng[];
   color?: string;
 };
-
 type PlanCard = {
   id: 'safe' | 'normal' | 'fast';
   label: '안전' | '보통' | '최단';
@@ -22,10 +24,6 @@ type PlanCard = {
   color: string;
   favorite?: boolean;
 };
-
-const startName = '경북대학교 정문';
-const targetDistanceKm = 5;
-const targetPace = `5'50"`;
 
 const nodes: GraphNode[] = [
   { id: 'start', lat: 35.8887, lng: 128.6111 },
@@ -45,37 +43,8 @@ const PLAN_COLORS: Record<'safe' | 'normal' | 'fast', string> = {
   fast: '#FFA42C',
 };
 
-const PLAN_CARDS: PlanCard[] = [
-  {
-    id: 'safe',
-    label: '안전',
-    distanceKm: targetDistanceKm,
-    steps: 3333,
-    etaText: '2시간 10분',
-    color: PLAN_COLORS.safe,
-    favorite: true,
-  },
-  {
-    id: 'normal',
-    label: '보통',
-    distanceKm: targetDistanceKm,
-    steps: 3333,
-    etaText: '2시간 10분',
-    color: PLAN_COLORS.normal,
-  },
-  {
-    id: 'fast',
-    label: '최단',
-    distanceKm: targetDistanceKm,
-    steps: 3333,
-    etaText: '2시간 10분',
-    color: PLAN_COLORS.fast,
-  },
-];
-
 function buildLinksByPlan(plan: 'safe' | 'normal' | 'fast'): GraphLink[] {
   const c = PLAN_COLORS[plan];
-
   if (plan === 'safe') {
     return [
       { id: 's1', from: 'start', to: 'n1', color: c },
@@ -97,7 +66,6 @@ function buildLinksByPlan(plan: 'safe' | 'normal' | 'fast'): GraphLink[] {
       { id: 'm5', from: 'n7', to: 'end', color: c },
     ];
   }
-  // fast(최단)
   return [
     { id: 'f1', from: 'start', to: 'n3', color: c },
     { id: 'f2', from: 'n3', to: 'n6', color: c },
@@ -120,7 +88,6 @@ function PlanCardItem({
     fast: '#FFDFB3',
   };
 
-  // "2시간 10분" → hours=2, mins=10  (두 자리 이상 지원)
   const hh = item.etaText.match(/(\d+)\s*시간/);
   const mm = item.etaText.match(/(\d+)\s*분/);
   const hours = hh?.[1] ?? '';
@@ -130,7 +97,7 @@ function PlanCardItem({
     <button
       onClick={onClick}
       className={[
-        'snap-start pointer-events-auto shrink-0 w-[160px] h-[110px] rounded-[8px] bg-white px-3 py-2 text-left shadow-md',
+        'snap-start pointer-events-auto shrink-0 w-[140px] h-[110px] rounded-[8px] bg-white px-3 py-2 text-left shadow-md',
         selected ? 'border-[2px] border-main3' : 'border-[2px] border-white',
       ].join(' ')}
     >
@@ -144,7 +111,7 @@ function PlanCardItem({
         <span className="text-main3 text-lg">♡</span>
       </div>
 
-      <div className="flex items-baseline gap-1 leading-none whitespace-nowrap tabular-nums">
+      <div className="flex items-baseline leading-none whitespace-nowrap tabular-nums">
         <span className="text-[28px] font-extrabold tracking-tight">
           {hours}
         </span>
@@ -163,28 +130,78 @@ function PlanCardItem({
 }
 
 export default function PathPage() {
-  const [selected, setSelected] = useState<PlanCard>(PLAN_CARDS[0]);
+  // URL 쿼리 파싱
+  const { search } = useLocation();
+  const qs = useMemo(() => new URLSearchParams(search), [search]);
 
-  const links: GraphLink[] = useMemo(() => {
-    if (selected.id === 'safe') return buildLinksByPlan('safe');
-    if (selected.id === 'normal') return buildLinksByPlan('normal');
-    return buildLinksByPlan('fast');
-  }, [selected]);
+  const startName = qs.get('start') ?? '경북대학교 정문';
+  const targetDistanceKm = Number(qs.get('distance') ?? '5');
+  const paceMin = qs.get('paceMin') ?? '5';
+  const paceSec = qs.get('paceSec') ?? '50';
+  const targetPace = `${paceMin}'${paceSec}"`;
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleStart = () => {
+    setIsOpen(false);
+    // navigate('/running/live?...')
+  };
+
+  const planCards = useMemo<PlanCard[]>(
+    () => [
+      {
+        id: 'safe',
+        label: '안전',
+        distanceKm: targetDistanceKm,
+        steps: 3333,
+        etaText: '2시간 10분',
+        color: PLAN_COLORS.safe,
+        favorite: true,
+      },
+      {
+        id: 'normal',
+        label: '보통',
+        distanceKm: targetDistanceKm,
+        steps: 3333,
+        etaText: '2시간 10분',
+        color: PLAN_COLORS.normal,
+      },
+      {
+        id: 'fast',
+        label: '최단',
+        distanceKm: targetDistanceKm,
+        steps: 3333,
+        etaText: '2시간 10분',
+        color: PLAN_COLORS.fast,
+      },
+    ],
+    [targetDistanceKm],
+  );
+
+  const [selectedId, setSelectedId] = useState<'safe' | 'normal' | 'fast'>(
+    'safe',
+  );
+  const selected = planCards.find((p) => p.id === selectedId)!;
+
+  const links: GraphLink[] = useMemo(
+    () => buildLinksByPlan(selectedId),
+    [selectedId],
+  );
 
   return (
     <div className="flex h-dvh flex-col bg-white">
-      <div className="flex items-center  px-4 pt-[12px] pb-4">
+      <div className="flex items-center px-4 pt-[12px] pb-4">
         <button
           aria-label="뒤로"
           className="grid h-9 w-9 place-items-center rounded-full"
           onClick={() => history.back()}
         >
-          <span className="text-xl">‹</span>
+          <IcSvgLeftArrow2 width={7} />
         </button>
         <div className="flex-grow text-center">
           <h1 className="text-med18 pr-3">경로 찾기</h1>
         </div>
       </div>
+
       <div className="px-6 pb-3 border-b shadow-2xl">
         <InfoRow
           label="출발지점"
@@ -199,6 +216,7 @@ export default function PathPage() {
           value={targetPace}
         />
       </div>
+
       <div className="relative flex-1">
         <RouteFromLinks
           nodes={nodes}
@@ -206,24 +224,20 @@ export default function PathPage() {
           showStartPin={false}
           showEndPin={false}
         />
-        <div className="pointer-events-none absolute inset-x-0 bottom-14 z-40">
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(56px+12px+env(safe-area-inset-bottom))] z-40">
           <div className="mx-auto w-full max-w-[560px] px-4">
             <div className="rounded-3xl bg-gradient-to-t from-black/10 to-transparent p-3">
               <div
-                className="
-                  flex gap-3 overflow-x-auto pb-1
-                  snap-x snap-mandatory
-                  [-ms-overflow-style:none] [scrollbar-width:none]
-                "
+                className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none]"
                 style={{ scrollbarWidth: 'none' }}
               >
-                <style>{`.hidebar::-webkit-scrollbar{display:none}`}</style>
-                {PLAN_CARDS.map((c) => (
+                {planCards.map((c) => (
                   <PlanCardItem
                     key={c.id}
                     item={c}
-                    selected={selected.id === c.id}
-                    onClick={() => setSelected(c)}
+                    selected={selectedId === c.id}
+                    onClick={() => setSelectedId(c.id)}
                   />
                 ))}
               </div>
@@ -231,19 +245,25 @@ export default function PathPage() {
           </div>
         </div>
       </div>
+
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
         <div className="w-full flex justify-center">
           <button
-            className="pointer-events-auto h-14 w-full max-w-[430px] bg-main3 text-white text-sem16 px-4
-      pb-[env(safe-area-inset-bottom)]"
-            onClick={() =>
-              alert(`'${selected.label}' 경로로 러닝을 시작합니다.`)
-            }
+            onClick={() => setIsOpen(true)}
+            className="pointer-events-auto h-14 w-full max-w-[430px] bg-main3 text-white text-sem16 px-4 pb-[env(safe-area-inset-bottom)]"
           >
             러닝 시작하기
           </button>
         </div>
       </div>
+      <StartRunModal
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        onStart={handleStart}
+        planId={selectedId}
+        startName={startName}
+        distanceKm={targetDistanceKm}
+      />
     </div>
   );
 }
