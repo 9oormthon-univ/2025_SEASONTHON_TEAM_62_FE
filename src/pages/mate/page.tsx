@@ -44,7 +44,7 @@ export default function MatePage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-1 justify-center">
+    <div className="flex flex-col gap-1 justify-center pt-3">
       <Input
         value=""
         placeholder={placeholder}
