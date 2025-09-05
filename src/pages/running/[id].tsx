@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import FloatingBackButton from './components/floatingButton';
 
@@ -12,13 +13,18 @@ export default function DetailPage() {
   const [minPace, setMinPace] = useState('');
   const [maxPace, setMaxPace] = useState('');
 
+  const navigate = useNavigate();
+
   const handleSearchRoute = () => {
-    console.log('경로 찾기 api요청', {
-      startLocation,
-      distance,
-      minPace,
-      maxPace,
+    const id = Date.now().toString(); 
+    const params = new URLSearchParams({
+      start: startLocation.trim(),
+      distance: (distance || '0').trim(),
+      paceMin: (minPace || '0').trim(),
+      paceSec: (maxPace || '0').trim(),
     });
+
+    navigate(`/running/${id}/path?${params.toString()}`);
   };
 
   return (
@@ -33,6 +39,7 @@ export default function DetailPage() {
           showEndPin={false}
         />
       </div>
+
       <div className="bg-white p-6 rounded-t-md">
         <div className="mb-4 flex items-center gap-4">
           <label className="w-28 shrink-0 text-sem18 text-black">
@@ -88,7 +95,7 @@ export default function DetailPage() {
 
         <button
           onClick={handleSearchRoute}
-          className="w-full rounded-lg bg-main2 py-3 text-sem16 text-white "
+          className="w-full rounded-lg bg-main2 py-3 text-sem16 text-white"
         >
           경로 찾기
         </button>
