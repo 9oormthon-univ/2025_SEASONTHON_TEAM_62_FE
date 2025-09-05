@@ -36,3 +36,37 @@ export async function reverseGeocode(
     });
   });
 }
+export async function keywordSearch(
+  query: string,
+  opts?: { location?: { lat: number; lng: number }; radius?: number }, // 반경(m)
+): Promise<{ lat: number; lng: number; name: string }[] | null> {
+  return new Promise((resolve) => {
+    if (!window.kakao?.maps?.services) return resolve(null);
+    const ps = new window.kakao.maps.services.Places();
+
+    const options: kakao.maps.services.PlacesSearchOptions = {};
+    if (opts?.location) {
+      options.location = new window.kakao.maps.LatLng(
+        opts.location.lat,
+        opts.location.lng,
+      );
+      if (opts.radius) options.radius = opts.radius; // 기본 5000m
+    }
+
+    ps.keywordSearch(
+      query,
+      (data, status) => {
+        if (status !== window.kakao.maps.services.Status.OK || !data?.length) {
+          return resolve(null);
+        }
+        const hits = data.map((d) => ({
+          lat: Number(d.y),
+          lng: Number(d.x),
+          name: d.place_name,
+        }));
+        resolve(hits);
+      },
+      options,
+    );
+  });
+}

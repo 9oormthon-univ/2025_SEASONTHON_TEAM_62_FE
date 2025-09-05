@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RunningBottomSheet } from './components/BottomSheet';
-import KakaoMapBasic from '../../shared/components/kakaomap/kakaomapBase';
 import { useNavigate } from 'react-router-dom';
+import SearchCenterMap from '../../shared/components/kakaomap/searchCenterMap';
 
 const favoritePlaces = [
   {
@@ -21,10 +21,9 @@ export default function RunningPage() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-full z-0">
-        <KakaoMapBasic />
+      <div className="absolute inset-0 z-0">
+        <SearchCenterMap fillParent />
       </div>
-
       <div className="relative z-5">
         <RunningBottomSheet open={isBottomSheetOpen}>
           <div className="p-4">
