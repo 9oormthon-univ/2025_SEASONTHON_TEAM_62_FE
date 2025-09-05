@@ -11,6 +11,7 @@ export { default as IcSvgMateFull } from './ic_matefull';
 export { default as IcSvgMyinfo } from './ic_myinfo';
 export { default as IcSvgMyinfoFull } from './ic_myinfofull';
 export { default as IcSvgPencil } from './ic_pencil';
+export { default as IcSvgPlay } from './ic_play';
 export { default as IcSvgSearch } from './ic_search';
 export { default as IcSvgShoes } from './ic_shoes';
 export { default as IcSvgTalk } from './ic_talk';

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import StartRunModal from './components/startRunModal';
@@ -139,10 +139,11 @@ export default function PathPage() {
   const paceSec = qs.get('paceSec') ?? '50';
   const targetPace = `${paceMin}'${paceSec}"`;
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleStart = () => {
     setIsOpen(false);
-    // navigate('/running/live?...')
+    navigate(`/running/start`);
   };
 
   const planCards = useMemo<PlanCard[]>(
