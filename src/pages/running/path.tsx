@@ -130,7 +130,6 @@ function PlanCardItem({
 }
 
 export default function PathPage() {
-  // URL 쿼리 파싱
   const { search } = useLocation();
   const qs = useMemo(() => new URLSearchParams(search), [search]);
 

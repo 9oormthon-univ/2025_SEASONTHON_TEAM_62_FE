@@ -16,7 +16,7 @@ export default function DetailPage() {
   const navigate = useNavigate();
 
   const handleSearchRoute = () => {
-    const id = Date.now().toString(); // 임시 id (원하면 서버 생성 id 사용)
+    const id = Date.now().toString(); 
     const params = new URLSearchParams({
       start: startLocation.trim(),
       distance: (distance || '0').trim(),
