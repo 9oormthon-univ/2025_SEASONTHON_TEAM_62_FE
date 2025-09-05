@@ -1,6 +1,11 @@
 // src/shared/components/kakaomap/searchCenterMap.tsx
-import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
-import { useEffect, useState } from 'react';
+import {
+  Map,
+  Circle,
+  CustomOverlayMap,
+  useKakaoLoader,
+} from 'react-kakao-maps-sdk';
+import { useEffect, useRef, useState } from 'react';
 import {
   geocodeAddress,
   reverseGeocode,
@@ -11,11 +16,8 @@ import Input from '../../components/input';
 type LatLng = { lat: number; lng: number };
 
 type Props = {
-  /** 부모 컨테이너를 가득 채울지 여부 (true면 width/height 100%) */
   fillParent?: boolean;
-  /** 내부 검색 입력 표시 여부(페이지 상단에 별도 검색바가 있다면 false로) */
   showSearch?: boolean;
-  /** 근처 검색 반경 (m). 기본 12km */
   nearbyRadius?: number;
 };
 
@@ -27,17 +29,23 @@ export default function SearchCenterMap({
   const appkey = import.meta.env.VITE_KAKAOMAP_KEY as string;
   useKakaoLoader({ appkey, libraries: ['services'] });
 
-  const [center, setCenter] = useState<LatLng>({ lat: 37.5665, lng: 126.978 }); // 초기: 서울
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<kakao.maps.Map | null>(null);
+
+  const [center, setCenter] = useState<LatLng>({ lat: 37.5665, lng: 126.978 });
   const [marker, setMarker] = useState<LatLng | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
   const [q, setQ] = useState('');
   const [placeholder, setPlaceholder] = useState('내 위치 불러오는 중...');
   const [isKakaoReady, setIsKakaoReady] = useState(false);
 
-  // Kakao SDK 준비 플래그 (useKakaoLoader가 붙인 스크립트가 services까지 준비되면 true)
   useEffect(() => {
     let raf = 0;
     const tick = () => {
-      if (typeof window !== 'undefined' && window.kakao?.maps?.services) {
+      if (
+        typeof window !== 'undefined' &&
+        (window as any).kakao?.maps?.services
+      ) {
         setIsKakaoReady(true);
       } else {
         raf = requestAnimationFrame(tick);
@@ -47,7 +55,6 @@ export default function SearchCenterMap({
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // 현재 위치 획득
   useEffect(() => {
     if (!('geolocation' in navigator)) {
       setPlaceholder('위치 서비스를 사용할 수 없어요');
@@ -58,14 +65,19 @@ export default function SearchCenterMap({
         const here = { lat: coords.latitude, lng: coords.longitude };
         setCenter(here);
         setMarker(here);
-        // 역지오코딩은 SDK 준비 후 별도 effect에서 수행
+        setAccuracy(
+          typeof coords.accuracy === 'number' ? coords.accuracy : null,
+        );
+
+        if (mapRef.current) {
+          mapRef.current.setCenter(new kakao.maps.LatLng(here.lat, here.lng));
+        }
       },
       () => setPlaceholder('위치 권한이 필요해요'),
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
     );
   }, []);
 
-  // SDK + marker 준비되면 주소로 placeholder 업데이트
   useEffect(() => {
     (async () => {
       if (!marker || !isKakaoReady) return;
@@ -74,52 +86,72 @@ export default function SearchCenterMap({
     })();
   }, [marker, isKakaoReady]);
 
-  // 검색: 키워드(근처) → 키워드(전국) → 주소 지오코딩
   async function onSearch() {
     const term = q.trim();
     if (!term) return;
 
-    // ① 키워드(장소명) - 내 주변 우선 시도
     if (isKakaoReady) {
       let hits = await keywordSearch(term, {
         location: center,
         radius: nearbyRadius,
       });
-
-      // ② 근처에서 못 찾으면 전국 검색 재시도
-      if (!hits || hits.length === 0) {
-        hits = await keywordSearch(term);
-      }
-
+      if (!hits || hits.length === 0) hits = await keywordSearch(term);
       if (hits && hits.length > 0) {
         const top = hits[0];
         const next = { lat: top.lat, lng: top.lng };
         setCenter(next);
         setMarker(next);
+        setAccuracy(null);
         setPlaceholder(top.name);
-        // 필요 시 입력창 초기화: setQ('');
         return;
       }
     }
 
-    // ③ 주소 지오코딩 폴백
     const byAddr = await geocodeAddress(term);
     if (byAddr) {
       setCenter(byAddr);
       setMarker(byAddr);
+      setAccuracy(null);
       if (isKakaoReady) {
         const addr = await reverseGeocode(byAddr.lat, byAddr.lng);
         if (addr) setPlaceholder(addr);
       }
-      // 필요 시 입력창 초기화: setQ('');
       return;
     }
 
     alert('결과를 찾을 수 없어요. (장소명/주소를 확인해 주세요)');
   }
 
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(() => {
+      if (mapRef.current && marker) {
+        mapRef.current.relayout();
+        mapRef.current.setCenter(new kakao.maps.LatLng(marker.lat, marker.lng));
+      }
+    });
+    ro.observe(containerRef.current);
+
+    const onWinResize = () => {
+      if (mapRef.current && marker) {
+        mapRef.current.relayout();
+        mapRef.current.setCenter(new kakao.maps.LatLng(marker.lat, marker.lng));
+      }
+    };
+    window.addEventListener('resize', onWinResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', onWinResize);
+    };
+  }, [marker]);
+
+  const radius =
+    accuracy != null ? Math.min(Math.max(accuracy, 10), 120) : null;
+
   return (
     <div
+      ref={containerRef}
       style={{
         width: '100%',
         height: fillParent ? '100%' : 520,
@@ -138,11 +170,10 @@ export default function SearchCenterMap({
           }}
         >
           <Input
-            value={q} // ⚠️ 값이 비어 있어야 placeholder가 보입니다.
+            value={q}
             placeholder={placeholder}
             onChange={(e) => setQ(e.target.value)}
             onSubmit={onSearch}
-            // disabled={!isKakaoReady} // 필요하면 SDK 준비될 때까지 입력 비활성화
           />
         </div>
       )}
@@ -154,16 +185,46 @@ export default function SearchCenterMap({
         isPanto
         draggable
         scrollwheel
-        onCreate={() => {
-          // 맵이 만들어지면 services도 거의 준비되어 있음
+        onCreate={(map) => {
+          mapRef.current = map;
           setIsKakaoReady(true);
         }}
       >
         {marker && (
-          <MapMarker
-            position={marker}
-            title="선택 위치"
-          />
+          <>
+            {radius && radius > 0 && (
+              <Circle
+                center={marker}
+                radius={radius}
+                strokeWeight={1}
+                strokeColor="#6C55CF"
+                strokeOpacity={0.45}
+                strokeStyle="solid"
+                fillColor="#6C55CF"
+                fillOpacity={0.2}
+                zIndex={9998}
+              />
+            )}
+
+            <CustomOverlayMap
+              position={marker}
+              xAnchor={0.5}
+              yAnchor={0.5}
+              zIndex={9999}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  backgroundColor: '#1E075D',
+                  border: '4px solid white',
+                  boxShadow: '0 0 6px rgba(0,0,0,0.3)',
+                  pointerEvents: 'none',
+                }}
+              />
+            </CustomOverlayMap>
+          </>
         )}
       </Map>
     </div>
