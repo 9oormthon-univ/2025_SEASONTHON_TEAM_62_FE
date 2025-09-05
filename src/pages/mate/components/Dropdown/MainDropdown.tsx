@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tag } from './Tag';
-import { IcSvgInputDelete } from '@/shared/icons';
+import { IcSvgInputDelete } from '../../../../shared/icons';
 
 export default function MainDropDown() {
   const [isDistanceSelected, setDistanceSelected] = useState(false);

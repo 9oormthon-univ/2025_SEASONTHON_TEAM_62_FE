@@ -1,5 +1,5 @@
 interface PostProps {
-  //id: string;
+  id: string;
   selected?: boolean;
   onClick?: () => void;
   level: '안전' | '보통' | '최단';
@@ -21,7 +21,6 @@ const levelStyleMap: Record<PostProps['level'], string> = {
 };
 
 const Post = ({
-  //id,
   selected = false,
   onClick,
   level,
@@ -86,7 +85,7 @@ const Post = ({
           ))}
         </div>
         <button
-          className="flex -mt-[0.5rem] gap-1 px-[0.5rem] py-[0.25rem] px-[0.5rem] bg-main3 text-white text-[0.75rem] font-semibold rounded-[8px]"
+          className="flex -mt-[0.5rem] gap-1 px-[0.5rem] px-[0.5rem] bg-main3 text-white text-[0.75rem] font-semibold rounded-[8px]"
           onClick={() => {}}
         >
           <span>참여하기 </span>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { IcSvgPencil, IcSvgTalk } from '@/shared/icons';
+import { IcSvgPencil, IcSvgTalk } from '../../../shared/icons';
 
 type FloatingButtonProps = {
   children: ReactNode;
