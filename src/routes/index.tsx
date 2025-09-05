@@ -2,13 +2,13 @@ import { createBrowserRouter } from 'react-router-dom';
 import GlobalLayout from '../shared/layouts/global-layout';
 import NotFoundPage from '../pages/NotFoundPage';
 
-import SplashPage from '../pages/splash/SplashPage';
 import LoginPage from '../pages/login/LoginPage';
 import RunningPage from '../pages/running/page';
 import MatePage from '../pages/mate/page';
 import MyinfoPage from '../pages/myinfo/page';
 import DetailPage from '../pages/running/[id]';
 import PathPage from '../pages/running/path';
+import SplashPage from '../pages/splash/page';
 
 export const router = createBrowserRouter([
   {

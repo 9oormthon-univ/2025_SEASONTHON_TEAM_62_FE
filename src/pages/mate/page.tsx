@@ -3,7 +3,7 @@ import Post from '../../shared/components/post';
 import api from '../../shared/apis/api';
 import Input from '../../shared/components/input';
 import { reverseGeocode } from '../../shared/lib/kakaoGeocoder';
-import MainDropDown from './components/Dropdown/MainDropdown';
+import MainDropDown from './components/tagWithDropdown/mainDropdown';
 import FloatingActions from './components/FloatingButton';
 import { formatTime } from '../../shared/lib/dateFormat';
 
