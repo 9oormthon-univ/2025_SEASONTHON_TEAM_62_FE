@@ -10,8 +10,12 @@ import {
 const BottomNavigation = () => {
   return (
     <nav
-      className="fixed bottom-0 shadow-[0_-2px_16px_rgba(0,0,0,0.1)] left-0 right-0 
-      rounded-t-[20px] h-[3.75rem] bg-white font-pretendard text-[0.625rem]"
+      className="
+        fixed bottom-0 left-0 right-0
+        shadow-[0_-2px_16px_rgba(0,0,0,0.1)]
+        rounded-t-[20px] h-[3.75rem] bg-white font-pretendard text-[0.625rem]
+        max-w-[430px] mx-auto
+      "
     >
       <ul className="relative flex items-center h-full">
         <li className="flex-1 h-full font-medium">
@@ -19,7 +23,7 @@ const BottomNavigation = () => {
             to="/myinfo"
             className={({ isActive }) =>
               [
-                'block w-full h-full flex flex-col items-center pr-[2.18rem] justify-center py-0',
+                'block w-full h-full flex flex-col items-center pr-[2.18rem] justify-center',
                 isActive ? 'text-black font-bold' : 'text-main1',
               ].join(' ')
             }
@@ -48,14 +52,8 @@ const BottomNavigation = () => {
               ].join(' ')
             }
           >
-            {({ isActive }) => (
-              <>
-                <IcSvgShoes
-                  className={`w-8 h-8 ${isActive ? 'text-white' : 'text-white'}`}
-                />
-                <span>런닝하기</span>
-              </>
-            )}
+            <IcSvgShoes className="w-8 h-8 text-white" />
+            <span>런닝하기</span>
           </NavLink>
         </li>
         <li className="flex-1 h-full font-medium">
@@ -63,8 +61,8 @@ const BottomNavigation = () => {
             to="/mate"
             className={({ isActive }) =>
               [
-                'block w-full h-full flex flex-col items-center pl-[2.18rem] justify-center py-0',
-                isActive ? 'text-black font-bold' : 'text-main',
+                'block w-full h-full flex flex-col items-center pl-[2.18rem] justify-center',
+                isActive ? 'text-black font-bold' : 'text-main1',
               ].join(' ')
             }
           >
@@ -73,7 +71,7 @@ const BottomNavigation = () => {
                 {isActive ? (
                   <IcSvgMateFull className="w-8 h-8 text-main1" />
                 ) : (
-                  <IcSvgMate className="w-8 h-8 text-main1 " />
+                  <IcSvgMate className="w-8 h-8 text-main1" />
                 )}
                 <span>메이트</span>
               </>
