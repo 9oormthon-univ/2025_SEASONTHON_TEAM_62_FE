@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 
 type RunItem = {
   id: number;
@@ -42,23 +42,35 @@ const TAG_BG = {
   fast: '#FFDFB3',
 } as const;
 
+//  정보 목데이터
+const mockUser = {
+  name: '홍길동',
+  stats: {
+    totalDistanceKm: 15.0,
+    avgPace: `05'45"`,
+    bestPace: `04'58"`,
+    totalRuns: runs.length,
+    totalTime: '01:15:00',
+  },
+};
+
 export default function MyinfoPage() {
-  const [month, setMonth] = useState('2025년 8월');
+  const totalDistanceText = useMemo(
+    () => mockUser.stats.totalDistanceKm.toFixed(2),
+    [],
+  );
 
   return (
     <div className="relative min-h-dvh bg-white pb-[120px]">
       <header className="px-5 pt-6">
         <div className="flex items-center gap-3 pb-2">
           <div className="h-14 w-14 rounded-full bg-gray3" />
-          <div className="text-med18 text-black">이름 님</div>
+          <div className="text-med18 text-black">{mockUser.name} 님</div>
         </div>
 
         <div className="mt-5">
-          <button
-            className="inline-flex items-center gap-1 rounded-md text-sem18 text-black"
-            onClick={() => setMonth(month)}
-          >
-            {month}
+          <button className="inline-flex items-center gap-1 rounded-md text-sem18 text-black">
+            2025년 8월
           </button>
         </div>
 
@@ -67,7 +79,7 @@ export default function MyinfoPage() {
             title="총 거리"
             value={
               <span className="text-[30px] font-extrabold tabular-nums">
-                00.00
+                {totalDistanceText}
               </span>
             }
           />
@@ -75,7 +87,7 @@ export default function MyinfoPage() {
             title="평균 페이스"
             value={
               <span className="text-[30px] font-extrabold tabular-nums">
-                00&apos;00&quot;
+                {mockUser.stats.avgPace}
               </span>
             }
           />
@@ -83,7 +95,7 @@ export default function MyinfoPage() {
             title="최고 페이스"
             value={
               <span className="text-[30px] font-extrabold tabular-nums">
-                00&apos;00&quot;
+                {mockUser.stats.bestPace}
               </span>
             }
           />
@@ -94,7 +106,7 @@ export default function MyinfoPage() {
             title="러닝"
             value={
               <span className="text-[24px] font-extrabold tabular-nums">
-                00
+                {mockUser.stats.totalRuns.toString().padStart(2, '0')}
               </span>
             }
           />
@@ -102,7 +114,7 @@ export default function MyinfoPage() {
             title="시간"
             value={
               <span className="text-[24px] font-extrabold tabular-nums">
-                00:00:00
+                {mockUser.stats.totalTime}
               </span>
             }
           />
