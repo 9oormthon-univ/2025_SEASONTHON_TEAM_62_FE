@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tag } from './Tag';
+import { Tag } from './tag';
 import { IcSvgInputDelete } from '../../../../shared/icons';
 
 export default function MainDropDown() {

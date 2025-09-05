@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { BottomSheet } from './BottomSheet';
+import { BottomSheet } from './bottomSheet';
 import { IcSvgDropdown } from '../../../../shared/icons';
 
 type TagProps = {
