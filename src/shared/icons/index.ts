@@ -16,3 +16,4 @@ export { default as IcSvgPlay } from './ic_play';
 export { default as IcSvgSearch } from './ic_search';
 export { default as IcSvgShoes } from './ic_shoes';
 export { default as IcSvgTalk } from './ic_talk';
+export { default as IcSvgVector } from './ic_vector';

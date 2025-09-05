@@ -59,7 +59,7 @@ const Post = ({
         </p>
         <p className="font-medium text-[1.125rem] text-black">{title}</p>
         <p className="font-normal text-[0.75rem] text-gray1">
-          {distanceFromHere}
+          {distanceFromHere}m
         </p>
       </div>
       <div className="flex gap-[0.75rem]">
@@ -85,7 +85,7 @@ const Post = ({
           ))}
         </div>
         <button
-          className="flex -mt-[0.5rem] gap-1 px-[0.5rem] px-[0.5rem] bg-main3 text-white text-[0.75rem] font-semibold rounded-[8px]"
+          className="flex -mt-[0.5rem] items-center gap-1 px-[0.5rem] px-[0.5rem] bg-main3 text-white text-[0.75rem] font-semibold rounded-[8px]"
           onClick={() => {}}
         >
           <span>참여하기 </span>
