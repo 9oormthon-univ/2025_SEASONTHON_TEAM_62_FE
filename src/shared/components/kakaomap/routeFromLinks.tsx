@@ -3,7 +3,7 @@ import {
   Polyline,
   useKakaoLoader,
 } from 'react-kakao-maps-sdk';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import LabelPin from './labelPin';
 
 type LatLng = { lat: number; lng: number };
@@ -71,10 +71,10 @@ export default function RouteFromLinks({
 
   const mapRef = useRef<kakao.maps.Map | null>(null);
 
-  useEffect(() => {
+  const fitToRoute = useCallback(() => {
     const kakao = (window as any).kakao;
     const map = mapRef.current;
-    if (!map || !kakao) return;
+    if (!kakao || !map) return;
 
     if (segments.length > 0) {
       const bounds = new kakao.maps.LatLngBounds();
@@ -83,11 +83,23 @@ export default function RouteFromLinks({
           bounds.extend(new kakao.maps.LatLng(p.lat, p.lng)),
         ),
       );
-      if (!bounds.isEmpty()) map.setBounds(bounds);
+      if (!bounds.isEmpty()) {
+        map.setBounds(bounds);
+      }
     } else if (start) {
       map.setCenter(new kakao.maps.LatLng(start.lat, start.lng));
+      map.setLevel(4);
     }
   }, [segments, start]);
+
+  const handleCreate = (map: kakao.maps.Map) => {
+    mapRef.current = map;
+    fitToRoute();
+  };
+
+  useEffect(() => {
+    fitToRoute();
+  }, [fitToRoute]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -95,7 +107,7 @@ export default function RouteFromLinks({
         center={start ?? { lat: 37.5665, lng: 126.978 }}
         level={6}
         style={{ width: '100%', height: '100%' }}
-        onCreate={(map) => (mapRef.current = map)}
+        onCreate={handleCreate}
       >
         {showStartPin && start && (
           <LabelPin

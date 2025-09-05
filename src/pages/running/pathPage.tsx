@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import StartRunModal from './components/startRunModal';
@@ -97,7 +97,7 @@ function PlanCardItem({
     <button
       onClick={onClick}
       className={[
-        'snap-start pointer-events-auto shrink-0 w-[140px] h-[110px] rounded-[8px] bg-white px-3 py-2 text-left shadow-md',
+        'snap-start pointer-events-auto shrink-0 w-[140px] h-[110px] rounded-[8px] bg-white px-3 py-2 text-left ',
         selected ? 'border-[2px] border-main3' : 'border-[2px] border-white',
       ].join(' ')}
     >
@@ -139,10 +139,11 @@ export default function PathPage() {
   const paceSec = qs.get('paceSec') ?? '50';
   const targetPace = `${paceMin}'${paceSec}"`;
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleStart = () => {
     setIsOpen(false);
-    // navigate('/running/live?...')
+    navigate(`/running/start`);
   };
 
   const planCards = useMemo<PlanCard[]>(
@@ -187,7 +188,7 @@ export default function PathPage() {
 
   return (
     <div className="flex h-dvh flex-col bg-white">
-      <div className="flex items-center px-4 pt-[12px] pb-4">
+      <div className="flex items-center px-4 pt-[12px] pb-4 bg-white">
         <button
           aria-label="뒤로"
           className="grid h-9 w-9 place-items-center rounded-full"
@@ -225,9 +226,17 @@ export default function PathPage() {
 
         <div className="pointer-events-none absolute inset-x-0 bottom-[calc(56px+12px+env(safe-area-inset-bottom))] z-40">
           <div className="mx-auto w-full max-w-[560px] px-4">
-            <div className="rounded-3xl bg-gradient-to-t from-black/10 to-transparent p-3">
+            <div className="rounded-3xl p-3">
               <div
-                className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none]"
+                className="
+          flex gap-3 overflow-x-auto pb-1
+          snap-x snap-mandatory
+          [-ms-overflow-style:none] [scrollbar-width:none]
+          pointer-events-auto                                  
+          [touch-action:pan-x]                                    
+          [-webkit-overflow-scrolling:touch]                 
+          [&::-webkit-scrollbar]:hidden                        
+        "
                 style={{ scrollbarWidth: 'none' }}
               >
                 {planCards.map((c) => (

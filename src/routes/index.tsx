@@ -7,8 +7,9 @@ import RunningPage from '../pages/running/page';
 import MatePage from '../pages/mate/page';
 import MyinfoPage from '../pages/myinfo/page';
 import DetailPage from '../pages/running/[id]';
-import PathPage from '../pages/running/path';
+import PathPage from '../pages/running/pathPage';
 import SplashPage from '../pages/splash/page';
+import StartPage from '../pages/running/startPage';
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: 'myinfo', element: <MyinfoPage /> },
       { path: 'running/:id', element: <DetailPage /> },
       { path: 'running/:id/path', element: <PathPage /> },
+      { path: 'running/start', element: <StartPage /> },
     ],
   },
 ]);
