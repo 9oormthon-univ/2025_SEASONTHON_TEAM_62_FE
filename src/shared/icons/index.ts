@@ -3,6 +3,7 @@
 
 export { default as IcSvgArrow } from './ic_arrow';
 export { default as IcSvgDropdown } from './ic_dropdown';
+export { default as IcSvgGoogle } from './ic_google';
 export { default as IcSvgInputDelete } from './ic_inputdelete';
 export { default as IcSvgLeftArrow } from './ic_leftarrow';
 export { default as IcSvgLeftArrow2 } from './ic_leftarrow2';
