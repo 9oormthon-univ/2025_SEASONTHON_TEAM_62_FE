@@ -11,7 +11,7 @@ import DetailPage from '../pages/running/[id]';
 import PathPage from '../pages/running/pathPage';
 import SplashPage from '../pages/splash/page';
 import StartPage from '../pages/running/startPage';
-// import CompletePage from 'pages/complete/completePage';
+import CompletePage from '../pages/complete/completePage';
 
 export const router = createBrowserRouter([
   {
@@ -28,7 +28,7 @@ export const router = createBrowserRouter([
       { path: 'running/:id/path', element: <PathPage /> },
       { path: 'running/start', element: <StartPage /> },
       { path: 'mate/matepath', element: <MatePathPage /> },
-      // { path: 'running/complete', element: <CompletePage /> },
+      { path: 'running/complete', element: <CompletePage /> },
     ],
   },
 ]);
