@@ -5,18 +5,18 @@ type Stats = {
   totalRuns: number;
   totalDistanceKm: number;
   totalDurationMinutes: number;
-  averagePace: string; // e.g. 6'10"/km
-  bestPace: string; // e.g. 6'00"/km
+  averagePace: string;
+  bestPace: string;
   averageDistanceKm: number;
   averageDurationMinutes: number;
-  lastRunDate: string; // ISO
+  lastRunDate: string;
   recentRuns: Array<{
     id: number;
+    safetyLevel: 'SAFE' | 'MEDIUM' | 'FAST';
     distanceKm: number;
     durationMinutes: number;
-    pace: string; // e.g. 5'30"/km
-    startTime: string; // ISO
-    weather: '맑음' | '흐림' | '비' | '눈' | '바람' | string;
+    pace: string;
+    startTime: string;
   }>;
 };
 
@@ -24,12 +24,16 @@ type StatsResponse =
   | { success: 'true' | true; data: Stats }
   | { success: 'false' | false; data?: never };
 
-const WEATHER_BG: Record<string, string> = {
-  맑음: '#FFEAB3',
-  흐림: '#E5E7EB',
-  비: '#DBEAFE',
-  눈: '#E0E7FF',
-  바람: '#DCFCE7',
+const SAFETY_BG: Record<string, string> = {
+  SAFE: '#B3FFC6',
+  MEDIUM: '#FFFAB3',
+  FAST: '#FFDFB3',
+};
+
+const SAFETY_LABEL: Record<string, string> = {
+  SAFE: '안전',
+  MEDIUM: '보통',
+  FAST: '최단',
 };
 
 function minutesToHHMM(totalMin: number): string {
@@ -128,7 +132,7 @@ export default function MyinfoPage() {
       <header className="px-5 pt-6">
         <div className="flex items-center gap-3 pb-2">
           <div className="h-14 w-14 rounded-full bg-gray3" />
-          <div className="text-med18 text-black">내 러닝</div>
+          <div className="text-med18 text-black">유니브</div>
         </div>
 
         <div className="mt-5">
@@ -200,7 +204,8 @@ export default function MyinfoPage() {
               const paceNoKm = stripKmSuffix(r.pace);
               const dateLabel = dateMD(r.startTime);
               const dur = minutesToPrettyHM(r.durationMinutes); // "HH:MM"
-              const tagBg = WEATHER_BG[r.weather] ?? '#E5E7EB';
+              const tagBg = SAFETY_BG[r.safetyLevel] ?? '#E5E7EB';
+              const tagLabel = SAFETY_LABEL[r.safetyLevel] ?? '';
 
               return (
                 <li
@@ -213,7 +218,7 @@ export default function MyinfoPage() {
                         className="mb-1 inline-block rounded-full px-2 py-0.5 text-reg12"
                         style={{ background: tagBg, color: '#111827' }}
                       >
-                        {r.weather}
+                        {tagLabel}
                       </span>
 
                       <div className="mt-1 flex items-baseline gap-2">
