@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import type { PropsWithChildren } from 'react';
 import BottomNavigation from '../components/bottom-navigation';
 
-const HIDDEN_BOTTOM_PATHS = ['/splash', '/onboarding'];
+const HIDDEN_BOTTOM_PATHS = ['/splash', '/onboarding', '/login'];
 
 export default function GlobalLayout({ children }: PropsWithChildren) {
   const { pathname } = useLocation();
