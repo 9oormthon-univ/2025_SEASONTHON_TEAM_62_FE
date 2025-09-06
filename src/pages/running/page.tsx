@@ -31,7 +31,15 @@ export default function RunningPage() {
   );
   const navigate = useNavigate();
 
-  const handleItemClick = (item: RouteItem) => {
+  // ✅ 즐겨찾기: MatePathPage로 복귀 + 바텀시트 자동 오픈
+  const handleFavoriteClick = (item: RouteItem) => {
+    navigate('/mate/matepath', {
+      state: { showMateSheet: true, favoriteId: item.id },
+    });
+  };
+
+  // ✅ 최근: 기존처럼 러닝 상세/내부 라우트로 이동
+  const handleRecentClick = (item: RouteItem) => {
     navigate(`/running/${item.id}`);
   };
 
@@ -40,7 +48,7 @@ export default function RunningPage() {
       <div className="absolute inset-0 z-0">
         <SearchCenterMap
           fillParent
-          // ✅ 사용자가 검색으로 출발지를 확정했을 때만 호출됨
+          // ✅ 검색으로 출발지 확정 시에만 호출됨 (searchCenterMap 수정 버전 기준)
           onSelectStart={(p) => {
             const qs = new URLSearchParams({
               start: p.name,
@@ -87,18 +95,19 @@ export default function RunningPage() {
                     <RouteListItem
                       key={item.id}
                       item={item}
-                      onClick={() => handleItemClick(item)}
+                      onClick={() => handleFavoriteClick(item)} // ← 변경
                     />
                   ))}
                 </ul>
               )}
+
               {activeTab === 'recent' && (
                 <ul className="divide-y divide-gray3 ">
                   {recentRoutes.map((item) => (
                     <RouteListItem
                       key={item.id}
                       item={item}
-                      onClick={() => handleItemClick(item)}
+                      onClick={() => handleRecentClick(item)} // ← 분리
                     />
                   ))}
                 </ul>
