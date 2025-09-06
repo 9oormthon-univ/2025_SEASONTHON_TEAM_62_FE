@@ -114,8 +114,17 @@ export default function PathPage() {
     (async () => {
       setLoading(true);
       try {
-        const response = await api.post('/api/routes/recommend', body);
-        const data: ApiResponse = response.data;
+        const res = await fetch(
+          `http://192.168.243.234:5000/api/routes/recommend`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          },
+        );
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: ApiResponse = await res.json();
 
         const next: typeof routeMap = {};
         data.routes.forEach((r) => {
@@ -138,20 +147,15 @@ export default function PathPage() {
         });
 
         if (!ignore) setRouteMap(next);
-      } catch (error: any) {
+      } catch (error) {
         console.error('경로 추천 API 호출 실패:', error);
         if (!ignore) {
-          const errorMessage =
-            error?.response?.data?.message ||
-            error?.message ||
-            '경로를 불러오는데 실패했습니다.';
-          alert(`${errorMessage} 다시 시도해주세요.`);
+          alert('경로를 불러오는데 실패했습니다. 다시 시도해주세요.');
         }
       } finally {
         if (!ignore) setLoading(false);
       }
     })();
-
     return () => {
       ignore = true;
     };
@@ -183,7 +187,6 @@ export default function PathPage() {
     });
   }, [routeMap, targetDistanceKm, paceMin]);
 
-  // 러닝 시작하기 - 선택된 경로 저장 후 시작
   const handleStart = async () => {
     const selectedRoute = routeMap[selectedId];
 
@@ -195,7 +198,6 @@ export default function PathPage() {
     setStartingRun(true);
 
     try {
-      // 선택된 경로를 서버에 저장
       const waypoints = selectedRoute.nodes.map((node) => [
         Number(node.lat.toFixed(6)),
         Number(node.lng.toFixed(6)),
@@ -215,7 +217,6 @@ export default function PathPage() {
       const response = await api.post('/api/selected-route', routeData);
       console.log('선택된 경로 저장 성공:', response.data);
 
-      // 러닝 시작 페이지로 이동
       setIsOpen(false);
       navigate(`/running/start?routeId=${response.data.id || ''}`);
     } catch (error: any) {
@@ -230,21 +231,17 @@ export default function PathPage() {
     }
   };
 
-  // 즐겨찾기 토글 (생성/삭제)
   async function toggleFavorite(id: 'safe' | 'normal' | 'fast', next: boolean) {
     const meta = routeMap[id];
     if (!meta || meta.nodes.length < 2) {
       alert('경로 데이터가 없습니다.');
       return;
     }
-
-    // 낙관적 UI 반영
     setSavingMap((m) => ({ ...m, [id]: true }));
     setFavoritedMap((m) => ({ ...m, [id]: next }));
 
     try {
       if (next) {
-        // CREATE
         const waypoints: [number, number][] = meta.nodes.map((n) => [
           Number(n.lat.toFixed(6)),
           Number(n.lng.toFixed(6)),
