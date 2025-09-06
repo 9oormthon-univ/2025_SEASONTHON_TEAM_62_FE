@@ -29,16 +29,15 @@ export default function RunningPage() {
   const userId = 7;
   const navigate = useNavigate();
 
-const handleFavoriteClick = (item: RouteItem) => {
-  navigate('/mate/matepath', {
-    state: { showMateSheet: true, favoriteId: item.id },
-  });
-};
+  const handleFavoriteClick = (item: RouteItem) => {
+    navigate('/mate/matepath', {
+      state: { showMateSheet: true, favoriteId: item.id },
+    });
+  };
 
-// ✅ 최근: develop 플로우 유지 (/running/start?favoriteId=...)
-const handleItemClick = (item: RouteItem) => {
-  navigate(`/running/start?favoriteId=${item.id}`);
-};
+  const handleItemClick = (item: RouteItem) => {
+    navigate(`/running/start?favoriteId=${item.id}`);
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -70,7 +69,6 @@ const handleItemClick = (item: RouteItem) => {
       <div className="absolute inset-0 z-0">
         <SearchCenterMap
           fillParent
-          // ✅ 검색으로 출발지 확정 시에만 호출됨 (searchCenterMap 수정 버전 기준)
           onSelectStart={(p) => {
             const qs = new URLSearchParams({
               start: p.name,
@@ -112,47 +110,51 @@ const handleItemClick = (item: RouteItem) => {
               </button>
             </div>
 
-<div className="mt-4">
-  {activeTab === 'favorites' && (
-    <>
-      {loading && (
-        <div className="py-8 text-center text-gray1">불러오는 중…</div>
-      )}
+            <div className="mt-4">
+              {activeTab === 'favorites' && (
+                <>
+                  {loading && (
+                    <div className="py-8 text-center text-gray1">
+                      불러오는 중…
+                    </div>
+                  )}
 
-      {!loading && error && (
-        <div className="py-8 text-center text-red-500">{error}</div>
-      )}
+                  {!loading && error && (
+                    <div className="py-8 text-center text-red-500">{error}</div>
+                  )}
 
-      {!loading && !error && listToRender.length === 0 && (
-        <div className="py-8 text-center text-gray1">즐겨찾기가 비어 있어요.</div>
-      )}
+                  {!loading && !error && listToRender.length === 0 && (
+                    <div className="py-8 text-center text-gray1">
+                      즐겨찾기가 비어 있어요.
+                    </div>
+                  )}
 
-      {!loading && !error && listToRender.length > 0 && (
-        <ul className="divide-y divide-gray3">
-          {listToRender.map((item) => (
-            <RouteListItem
-              key={item.id}
-              item={item}
-              onClick={() => handleFavoriteClick(item)} // ✅ feat 쪽 클릭 로직 유지
-            />
-          ))}
-        </ul>
-      )}
-    </>
-  )}
+                  {!loading && !error && listToRender.length > 0 && (
+                    <ul className="divide-y divide-gray3">
+                      {listToRender.map((item) => (
+                        <RouteListItem
+                          key={item.id}
+                          item={item}
+                          onClick={() => handleFavoriteClick(item)} 
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
 
-  {activeTab === 'recent' && (
-    <ul className="divide-y divide-gray3 ">
-      {recentRoutes.map((item) => (
-        <RouteListItem
-          key={item.id}
-          item={item}
-          onClick={() => handleItemClick(item)}
-        />
-      ))}
-    </ul>
-  )}
-</div>
+              {activeTab === 'recent' && (
+                <ul className="divide-y divide-gray3 ">
+                  {recentRoutes.map((item) => (
+                    <RouteListItem
+                      key={item.id}
+                      item={item}
+                      onClick={() => handleItemClick(item)}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </RunningBottomSheet>
       </div>

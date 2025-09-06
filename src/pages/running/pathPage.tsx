@@ -1,22 +1,31 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import StartRunModal from './components/startRunModal';
 import api from '../../shared/apis/api';
-import { FavoriteIcon } from '../../shared/components/favoriteIcon';
+import {
+  estimateSteps,
+  normalizeWaypoints,
+  toNodesAndLinks,
+} from './utils/running';
+import { InfoRow, PlanCardItem } from './components/path';
 
 type LatLng = { lat: number; lng: number };
-type GraphNode = { id: string; lat: number; lng: number };
-type GraphLink = { id: string; from: string; to: string; color?: string };
+export type GraphNode = { id: string; lat: number; lng: number };
+export type GraphLink = {
+  id: string;
+  from: string;
+  to: string;
+  color?: string;
+};
 
-type PlanCard = {
+export type PlanCard = {
   id: 'safe' | 'normal' | 'fast';
   label: '안전' | '보통' | '최단';
   distanceKm: number;
   steps: number;
-  etaText: string; // "31분" 또는 "1시간 5분"
+  etaText: string;
   color: string;
   safetyScore: number;
 };
@@ -27,59 +36,7 @@ const PLAN_COLORS: Record<'safe' | 'normal' | 'fast', string> = {
   fast: '#FFA42C',
 };
 
-const API_BASE = (import.meta as any).env.VITE_API_BASE_URL as string;
 const USER_ID = 7;
-
-// ---------------- 유틸 ----------------
-
-function normalizeWaypoints(raw: unknown): [number, number][] {
-  if (!Array.isArray(raw)) return [];
-
-  if (raw.length > 0 && typeof raw[0] === 'string') {
-    return (raw as string[])
-      .map((s) => s.split(',').map((v) => parseFloat(String(v).trim())))
-      .filter((p) => p.length === 2 && p.every((n) => Number.isFinite(n)))
-      .map(([lat, lng]) => [lat, lng]);
-  }
-
-  return (raw as any[])
-    .map((pair) => {
-      if (!Array.isArray(pair) || pair.length < 2) return null;
-      const a = pair[0];
-      const b = pair[1];
-      const lat = typeof a === 'string' ? parseFloat(a) : a;
-      const lng = typeof b === 'string' ? parseFloat(b) : b;
-      return Number.isFinite(lat) && Number.isFinite(lng)
-        ? ([lat, lng] as [number, number])
-        : null;
-    })
-    .filter(Boolean) as [number, number][];
-}
-
-function toNodesAndLinks(waypoints: [number, number][]) {
-  const nodes: GraphNode[] = waypoints.map(([lat, lng], i) => ({
-    id: i === 0 ? 'start' : i === waypoints.length - 1 ? 'end' : `n${i}`,
-    lat,
-    lng,
-  }));
-  const links: GraphLink[] = [];
-  for (let i = 0; i < nodes.length - 1; i++) {
-    links.push({ id: `seg-${i}`, from: nodes[i].id, to: nodes[i + 1].id });
-  }
-  return { nodes, links };
-}
-
-function etaTextFromMinutes(mins: number) {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h ? `${h}시간 ` : ''}${m}분`;
-}
-
-function estimateSteps(km: number) {
-  return Math.round(km * 1300);
-}
-
-// ---------------- 기본값 ----------------
 
 const DEFAULT_START_POINT: LatLng = { lat: 35.8887, lng: 128.6111 };
 
@@ -199,7 +156,6 @@ export default function PathPage() {
         if (!ignore) setLoading(false);
       }
     })();
-
     return () => {
       ignore = true;
     };
@@ -231,7 +187,6 @@ export default function PathPage() {
     });
   }, [routeMap, targetDistanceKm, paceMin]);
 
-  // 러닝 시작하기 - 선택된 경로 저장 후 시작
   const handleStart = async () => {
     const selectedRoute = routeMap[selectedId];
 
@@ -243,7 +198,6 @@ export default function PathPage() {
     setStartingRun(true);
 
     try {
-      // 선택된 경로를 서버에 저장
       const waypoints = selectedRoute.nodes.map((node) => [
         Number(node.lat.toFixed(6)),
         Number(node.lng.toFixed(6)),
@@ -260,48 +214,34 @@ export default function PathPage() {
         targetPaceMinPerKm: paceMin + paceSec / 60,
       };
 
-      const response = await fetch(
-        'http://192.168.243.234:5000/api/selected-route',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(routeData),
-        },
-      );
+      const response = await api.post('/api/selected-route', routeData);
+      console.log('선택된 경로 저장 성공:', response.data);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('선택된 경로 저장 성공:', result);
-
-      // 러닝 시작 페이지로 이동
       setIsOpen(false);
-      navigate(`/running/start?routeId=${result.id || ''}`);
-    } catch (error) {
+      navigate(`/running/start?routeId=${response.data.id || ''}`);
+    } catch (error: any) {
       console.error('선택된 경로 저장 실패:', error);
-      alert('러닝을 시작하는데 실패했습니다. 다시 시도해주세요.');
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        '러닝을 시작하는데 실패했습니다.';
+      alert(`${errorMessage} 다시 시도해주세요.`);
     } finally {
       setStartingRun(false);
     }
   };
 
-  // 즐겨찾기 토글 (생성/삭제)
   async function toggleFavorite(id: 'safe' | 'normal' | 'fast', next: boolean) {
     const meta = routeMap[id];
     if (!meta || meta.nodes.length < 2) {
       alert('경로 데이터가 없습니다.');
       return;
     }
-
-    // 낙관적 UI 반영
     setSavingMap((m) => ({ ...m, [id]: true }));
     setFavoritedMap((m) => ({ ...m, [id]: next }));
 
     try {
       if (next) {
-        // CREATE
         const waypoints: [number, number][] = meta.nodes.map((n) => [
           Number(n.lat.toFixed(6)),
           Number(n.lng.toFixed(6)),
@@ -323,7 +263,6 @@ export default function PathPage() {
         };
 
         const { data } = await api.post('/api/favorites', body);
-        // 성공 응답에서 ID 추출(백엔드 포맷에 방어적으로 대응)
         const favId: number | undefined =
           data?.data?.id ?? data?.id ?? data?.favoriteId;
         if (!favId) throw new Error('즐겨찾기 ID를 받지 못했습니다.');
@@ -474,98 +413,6 @@ export default function PathPage() {
         startName={startName}
         distanceKm={routeMap[selectedId]?.distanceKm ?? targetDistanceKm}
       />
-    </div>
-  );
-}
-
-function PlanCardItem({
-  item,
-  selected,
-  onClick,
-  favoriteChecked,
-  favoriteLoading,
-  onFavoriteChange,
-}: {
-  item: PlanCard;
-  selected: boolean;
-  onClick: () => void;
-  favoriteChecked: boolean;
-  favoriteLoading: boolean;
-  onFavoriteChange: (next: boolean) => void;
-}) {
-  const TAG_BG: Record<PlanCard['id'], string> = {
-    safe: '#B3FFC6',
-    normal: '#FFFAB3',
-    fast: '#FFDFB3',
-  };
-
-  const hh = item.etaText.match(/(\d+)\s*시간/);
-  const mm = item.etaText.match(/(\d+)\s*분/);
-  const hours = hh?.[1] ?? '';
-  const mins = mm?.[1] ?? '';
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onClick();
-      }}
-      className={[
-        'snap-start pointer-events-auto h-[110px] w-[150px] shrink-0 rounded-[8px] bg-white px-3 py-2 text-left',
-        selected ? 'border-[2px] border-main3' : 'border-[2px] border-white',
-      ].join(' ')}
-    >
-      <div className="mb-1 flex items-center justify-between">
-        <div className="min-w-0 flex items-center gap-1">
-          <span
-            className="inline-block rounded-full px-2 py-0.5 text-reg12"
-            style={{ background: TAG_BG[item.id], color: '#111827' }}
-          >
-            {item.label}
-          </span>
-          <span className="text-[11px] text-gray-500">
-            · {item.safetyScore}
-          </span>
-        </div>
-
-        <FavoriteIcon
-          checked={favoriteChecked}
-          onChange={onFavoriteChange}
-          disabled={favoriteLoading}
-          aria-label={favoriteChecked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-          className="grid h-6 w-6 place-items-center"
-        />
-      </div>
-
-      <div className="flex items-baseline whitespace-nowrap tabular-nums leading-none">
-        {hours && (
-          <>
-            <span className="text-[28px] font-extrabold tracking-tight">
-              {hours}
-            </span>
-            <span className="mr-1 text-[16px] font-medium">시간</span>
-          </>
-        )}
-        <span className="text-[28px] font-extrabold tracking-tight">
-          {mins}
-        </span>
-        <span className="text-[16px] font-medium">분</span>
-      </div>
-
-      <div className="mt-1 text-[13px] text-gray1">
-        {item.distanceKm.toFixed(1)}km · {item.steps.toLocaleString()}걸음
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="mb-2 flex items-center gap-6">
-      <div className="w-20 text-med14 text-black">{label}</div>
-      <div className="text-sem16 text-black">{value}</div>
     </div>
   );
 }
