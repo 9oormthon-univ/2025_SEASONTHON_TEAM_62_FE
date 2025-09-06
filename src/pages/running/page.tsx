@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { RunningBottomSheet } from './components/runningBottomSheet';
 import SearchCenterMap from '../../shared/components/kakaomap/searchCenterMap';
 import RouteListItem from './components/listItem';
@@ -73,12 +73,31 @@ export default function RunningPage() {
   const userId = 7;
   const navigate = useNavigate();
 
+  // 🔹 MatePathPage에서 경유해서 왔는지 체크 (이 경우 다시 MatePathPage로 돌려보내야 함)
+  const location = useLocation();
+  const fromMatePath = Boolean((location.state as any)?.fromMatePath);
 
+  // ✅ 즐겨찾기 클릭: 분기 처리
   const handleFavoriteClick = (item: RouteItem) => {
-    navigate('/mate/matepath', {
-      state: { showMateSheet: true, favoriteId: item.id },
-    });
+    if (fromMatePath) {
+      // MatePathPage → (경로 찾기) → RunningPage 로 들어온 경우:
+      // 다시 MatePathPage로 복귀시키고 바텀시트 열기
+      navigate('/mate/matepath', {
+        state: {
+          showMateSheet: true,
+          favoriteId: item.id,
+          safeLabel: mapTypeToLabel(item.type),
+          placeName: item.name,
+          distanceText: `${item.distanceKm}km`,
+        },
+      });
+    } else {
+      // 일반 진입인 경우: StartPage로 바로 이동
+      navigate(`/running/start?favoriteId=${item.id}`);
+    }
   };
+
+  // ✅ 최근: StartPage로 바로 이동 (기존 플로우 유지)
   const handleItemClick = (item: RouteItem) => {
     navigate(`/running/start?favoriteId=${item.id}`);
   };
@@ -181,9 +200,9 @@ export default function RunningPage() {
                     <ul className="divide-y divide-gray3">
                       {listToRender.map((item) => (
                         <RouteListItem
-                          key={item.id}
+                          key={String(item.id)}
                           item={item}
-                          onClick={() => handleFavoriteClick(item)} 
+                          onClick={() => handleFavoriteClick(item)}
                         />
                       ))}
                     </ul>
@@ -195,7 +214,7 @@ export default function RunningPage() {
                 <ul className="divide-y divide-gray3 ">
                   {recentRoutes.map((item) => (
                     <RouteListItem
-                      key={item.id}
+                      key={String(item.id)}
                       item={item}
                       onClick={() => handleItemClick(item)}
                     />

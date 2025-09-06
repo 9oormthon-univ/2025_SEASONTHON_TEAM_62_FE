@@ -168,7 +168,12 @@ export default function MatePathPage() {
         <div className="w-full flex justify-center pt-2 pb-3 px-7">
           <button
             className="w-full py-1.5 bg-main2 text-white items-center font-semibold text-[14px] rounded-[8px]"
-            onClick={() => navigate('/', { state: { hideBottom: true } })}
+            // 🔹 러닝 페이지로 이동 시, fromMatePath 플래그를 함께 전달
+            onClick={() =>
+              navigate('/running', {
+                state: { hideBottom: true, fromMatePath: true },
+              })
+            }
           >
             경로 찾기
           </button>
