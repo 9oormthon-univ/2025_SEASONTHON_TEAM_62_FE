@@ -212,7 +212,9 @@ export default function PathPage() {
       });
 
       setIsOpen(false);
-      navigate('/running/start');
+      navigate(
+        `/running/start?targetDistanceKm=${selectedRoute.distanceKm.toFixed(2)}`,
+      );
     } catch (error: any) {
       console.error('경로 완주 저장 실패:', error);
       const msg =
