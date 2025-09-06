@@ -29,6 +29,7 @@ export default function MainDropDown() {
     setMaxDistance('');
   };
 
+  //인풋 포커스 안됐을때는  바텀시트 200px 높이여야하고 포커되면 400px여야해
   return (
     <div className="flex flex-row flex-wrap justify-left p-4 gap-3">
       <Tag
@@ -47,7 +48,7 @@ export default function MainDropDown() {
               <input
                 type="text"
                 placeholder="0"
-                className="w-[112px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left pr-8"
+                className="w-[112px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left pr-8"
                 value={minDistance}
                 onChange={handleMinDistanceChange}
               />
@@ -69,7 +70,7 @@ export default function MainDropDown() {
               <input
                 type="text"
                 placeholder="0"
-                className="w-[112px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left pr-8"
+                className="w-[112px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left pr-8"
                 value={maxDistance}
                 onChange={handleMaxDistanceChange}
               />
@@ -102,26 +103,26 @@ export default function MainDropDown() {
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-[24px]">'</span>
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-[24px]">"</span>
             <span className="text-[24px] mx-2">~</span>
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-xl font-bold">'</span>
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-[24px]">"</span>
           </div>
@@ -139,25 +140,25 @@ export default function MainDropDown() {
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-[24px]">:</span>
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-[24px] mx-2">~</span>
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-xl font-bold">:</span>
             <input
               type="text"
               placeholder="00"
-              className="w-[42px] h-9 px-3 rounded-md border border-gray-300 text-[14px] text-left "
+              className="w-[45px] h-9 px-3 rounded-md border border-gray-300 text-[16px] text-left "
             />
             <span className="text-[24px]">"</span>
           </div>

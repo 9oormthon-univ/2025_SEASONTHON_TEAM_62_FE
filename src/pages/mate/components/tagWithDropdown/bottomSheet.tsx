@@ -7,7 +7,6 @@ type BottomSheetProps = {
   onApply: () => void;
   onReset: () => void;
 };
-
 export function BottomSheet({
   open,
   onClose,
@@ -21,25 +20,19 @@ export function BottomSheet({
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
   };
-
   const handleTouchMove = (e: React.TouchEvent) => {
     const deltaY = e.touches[0].clientY - startY.current;
-    if (deltaY > 0) {
-      setDragY(deltaY);
-    }
+    if (deltaY > 0) setDragY(deltaY);
   };
-
   const handleTouchEnd = () => {
-    if (dragY > 80) {
-      onClose();
-    }
+    if (dragY > 80) onClose();
     setDragY(0);
   };
 
   return (
     <div
       className={[
-        'fixed inset-0 z-[100] transition-opacity duration-300 flex justify-center items-end',
+        'fixed inset-0 z-[100] flex items-end justify-center transition-opacity duration-300',
         open ? 'opacity-100' : 'pointer-events-none opacity-0',
       ].join(' ')}
     >
@@ -51,32 +44,38 @@ export function BottomSheet({
         <div
           role="dialog"
           aria-modal="true"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
           className={[
-            'relative w-full h-[420px] pb-[calc(env(safe-area-inset-bottom)+12px)]',
-            'rounded-t-[20px] bg-white w-full pt-1',
-            'transform transition-transform duration-300',
+            'relative w-full rounded-t-[20px] bg-white pt-1',
+            'h-[240px] focus-within:h-[420px] max-h-[90svh]',
+            'grid grid-rows-[auto,1fr,auto]',
+            'transform transition-[height,transform] duration-300',
             open ? 'translate-y-0' : 'translate-y-full',
           ].join(' ')}
           style={{
             transform: open ? `translateY(${dragY}px)` : 'translateY(100%)',
-            transition: dragY > 0 ? 'none' : undefined,
+            transition: dragY > 0 ? 'height 300ms' : undefined,
           }}
         >
-          <div className="w-10 h-1 mt-4 bg-gray1/70 rounded-full mx-auto  mb-3 cursor-grab" />
-          {children}
-          <div className="flex px-4 gap-[10px] py-4">
+          <div
+            className="w-full select-none touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className="mx-auto mb-3 mt-4 h-1 w-10 cursor-grab rounded-full bg-gray1/70" />
+          </div>
+          <div className="min-h-0 overflow-y-auto">{children}</div>
+
+          <div className="flex gap-[10px] px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+12px)] s">
             <button
               onClick={onReset}
-              className="w-[100px] rounded-[8px] py-3 text-sm bg-white border border-gray2 text-black"
+              className="w-[100px] rounded-[8px] border border-gray2 bg-white py-3 text-sm text-black"
             >
               초기화
             </button>
             <button
               onClick={onApply}
-              className="flex-1 rounded-[8px] py-3 text-sm font-medium bg-main2 text-white"
+              className="flex-1 rounded-[8px] bg-main2 py-3 text-sm font-medium text-white"
             >
               적용하기
             </button>
