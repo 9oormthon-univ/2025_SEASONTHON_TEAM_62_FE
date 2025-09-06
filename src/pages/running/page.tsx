@@ -73,20 +73,12 @@ export default function RunningPage() {
   const userId = 7;
   const navigate = useNavigate();
 
-  // ✅ 즐겨찾기 클릭: MatePathPage에서 바로 시트 열리고 필요한 값들 전달
+
   const handleFavoriteClick = (item: RouteItem) => {
     navigate('/mate/matepath', {
-      state: {
-        showMateSheet: true,
-        favoriteId: item.id,
-        safeLabel: mapTypeToLabel(item.type),
-        placeName: item.name,
-        distanceText: `${item.distanceKm}km`,
-      },
+      state: { showMateSheet: true, favoriteId: item.id },
     });
   };
-
-  // ✅ 최근: develop 플로우 유지 (/running/start?favoriteId=...)
   const handleItemClick = (item: RouteItem) => {
     navigate(`/running/start?favoriteId=${item.id}`);
   };
@@ -127,7 +119,6 @@ export default function RunningPage() {
       <div className="absolute inset-0 z-0">
         <SearchCenterMap
           fillParent
-          // ✅ 검색으로 출발지 확정 시에만 호출됨 (searchCenterMap 수정 버전 기준)
           onSelectStart={(p) => {
             const qs = new URLSearchParams({
               start: p.name,
@@ -190,9 +181,9 @@ export default function RunningPage() {
                     <ul className="divide-y divide-gray3">
                       {listToRender.map((item) => (
                         <RouteListItem
-                          key={String(item.id)}
+                          key={item.id}
                           item={item}
-                          onClick={() => handleFavoriteClick(item)} // ✅ MatePathPage로 값 전달
+                          onClick={() => handleFavoriteClick(item)} 
                         />
                       ))}
                     </ul>
@@ -204,7 +195,7 @@ export default function RunningPage() {
                 <ul className="divide-y divide-gray3 ">
                   {recentRoutes.map((item) => (
                     <RouteListItem
-                      key={String(item.id)}
+                      key={item.id}
                       item={item}
                       onClick={() => handleItemClick(item)}
                     />
