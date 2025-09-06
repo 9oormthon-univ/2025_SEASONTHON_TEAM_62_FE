@@ -51,16 +51,22 @@ const Post = ({
       className={`${cardBase} ${selected ? cardWhenSelected : cardWhenIdle} pt-[0.75rem] pr-[0.5625rem] pb-[0.4375rem] pl-[1.25rem]`}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
     >
-      <div className="h-[1.56rem] flex gap-[0.5rem] items-center">
+      <div className="flex items-center gap-[0.5rem]">
         <p
-          className={` px-[0.375rem] py-[0.125rem] text-[0.75rem] font-normal rounded-[8px] ${levelStyleMap[level]}`}
+          className={`px-[0.375rem] py-[0.125rem] text-[0.75rem] rounded-[8px] ${levelStyleMap[level]}`}
         >
           {level}
         </p>
-        <p className="font-medium text-[1.125rem] text-black">{title}</p>
-        <p className="font-normal text-[0.75rem] text-gray1">
-          {distanceFromHere}m
-        </p>
+
+        {/* 타이틀과 거리 묶음 */}
+        <div className="flex items-baseline gap-1 min-w-0 flex-1">
+          <span className="font-medium text-[1.125rem] text-black truncate">
+            {title}
+          </span>
+          <span className="text-[0.75rem] text-gray1 shrink-0">
+            {distanceFromHere}m
+          </span>
+        </div>
       </div>
       <div className="flex gap-[0.75rem]">
         {infoList.map((item) => (
