@@ -46,7 +46,7 @@ export function BottomSheet({
           aria-modal="true"
           className={[
             'relative w-full rounded-t-[20px] bg-white pt-1',
-            'h-[240px] focus-within:h-[420px] max-h-[90svh]',
+            'h-[240px]  max-h-[90svh]',
             'grid grid-rows-[auto,1fr,auto]',
             'transform transition-[height,transform] duration-300',
             open ? 'translate-y-0' : 'translate-y-full',

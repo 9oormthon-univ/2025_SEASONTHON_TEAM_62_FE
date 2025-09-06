@@ -1,63 +1,126 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import api from '../../shared/apis/api';
 
-type RunItem = {
-  id: number;
-  type: 'safe' | 'normal' | 'fast';
-  name: string;
-  distanceKm: number;
-  date: string;
-  duration: string;
+type Stats = {
+  totalRuns: number;
+  totalDistanceKm: number;
+  totalDurationMinutes: number;
+  averagePace: string; // e.g. 6'10"/km
+  bestPace: string; // e.g. 6'00"/km
+  averageDistanceKm: number;
+  averageDurationMinutes: number;
+  lastRunDate: string; // ISO
+  recentRuns: Array<{
+    id: number;
+    distanceKm: number;
+    durationMinutes: number;
+    pace: string; // e.g. 5'30"/km
+    startTime: string; // ISO
+    weather: '맑음' | '흐림' | '비' | '눈' | '바람' | string;
+  }>;
 };
 
-const runs: RunItem[] = [
-  {
-    id: 1,
-    type: 'safe',
-    name: '경북대학교 정문',
-    distanceKm: 5,
-    date: '8.13',
-    duration: '00:00',
-  },
-  {
-    id: 2,
-    type: 'safe',
-    name: '경북대학교 정문',
-    distanceKm: 5,
-    date: '8.13',
-    duration: '00:00',
-  },
-  {
-    id: 3,
-    type: 'safe',
-    name: '경북대학교 정문',
-    distanceKm: 5,
-    date: '8.13',
-    duration: '00:00',
-  },
-];
+type StatsResponse =
+  | { success: 'true' | true; data: Stats }
+  | { success: 'false' | false; data?: never };
 
-const TAG_BG = {
-  safe: '#B3FFC6',
-  normal: '#FFFAB3',
-  fast: '#FFDFB3',
-} as const;
-
-//  정보 목데이터
-const mockUser = {
-  name: '홍길동',
-  stats: {
-    totalDistanceKm: 15.0,
-    avgPace: `05'45"`,
-    bestPace: `04'58"`,
-    totalRuns: runs.length,
-    totalTime: '01:15:00',
-  },
+const WEATHER_BG: Record<string, string> = {
+  맑음: '#FFEAB3',
+  흐림: '#E5E7EB',
+  비: '#DBEAFE',
+  눈: '#E0E7FF',
+  바람: '#DCFCE7',
 };
+
+function minutesToHHMM(totalMin: number): string {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function minutesToPrettyHM(totalMin: number): string {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function monthLabelFrom(iso?: string) {
+  const d = iso ? new Date(iso) : new Date();
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
+}
+
+function dateMD(iso: string) {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}
+
+function stripKmSuffix(pace: string) {
+  // "6'10\"/km" -> "6'10\""
+  const idx = pace.indexOf('/km');
+  return idx > 0 ? pace.slice(0, idx) : pace;
+}
+
+function Metric({ title, value }: { title: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-sem16 text-gray1">{title}</div>
+      <div className="leading-tight">{value}</div>
+    </div>
+  );
+}
 
 export default function MyinfoPage() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // 데이터 로드
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data } = await api.get<StatsResponse>('/api/running/stats');
+        const ok =
+          (data as any)?.success === 'true' || (data as any)?.success === true;
+        if (!ok) throw new Error('러닝 통계 조회 실패');
+        if (!ignore) setStats((data as any).data);
+      } catch (e: any) {
+        if (!ignore) setError(e?.message ?? '러닝 통계를 불러오지 못했습니다.');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const monthLabel = useMemo(
+    () => monthLabelFrom(stats?.lastRunDate),
+    [stats?.lastRunDate],
+  );
+
   const totalDistanceText = useMemo(
-    () => mockUser.stats.totalDistanceKm.toFixed(2),
-    [],
+    () => (stats ? stats.totalDistanceKm.toFixed(2) : '0.00'),
+    [stats],
+  );
+
+  const avgPace = useMemo(
+    () => (stats ? stripKmSuffix(stats.averagePace) : `00'00"`),
+    [stats],
+  );
+
+  const bestPace = useMemo(
+    () => (stats ? stripKmSuffix(stats.bestPace) : `00'00"`),
+    [stats],
+  );
+
+  const totalTime = useMemo(
+    () =>
+      stats ? `${minutesToHHMM(stats.totalDurationMinutes)}:00` : '00:00:00',
+    [stats],
   );
 
   return (
@@ -65,15 +128,16 @@ export default function MyinfoPage() {
       <header className="px-5 pt-6">
         <div className="flex items-center gap-3 pb-2">
           <div className="h-14 w-14 rounded-full bg-gray3" />
-          <div className="text-med18 text-black">{mockUser.name} 님</div>
+          <div className="text-med18 text-black">내 러닝</div>
         </div>
 
         <div className="mt-5">
           <button className="inline-flex items-center gap-1 rounded-md text-sem18 text-black">
-            2025년 8월
+            {monthLabel}
           </button>
         </div>
 
+        {/* 메트릭 3개 */}
         <div className="mt-5 grid grid-cols-3 gap-2">
           <Metric
             title="총 거리"
@@ -87,7 +151,7 @@ export default function MyinfoPage() {
             title="평균 페이스"
             value={
               <span className="text-[30px] font-extrabold tabular-nums">
-                {mockUser.stats.avgPace}
+                {avgPace}
               </span>
             }
           />
@@ -95,7 +159,7 @@ export default function MyinfoPage() {
             title="최고 페이스"
             value={
               <span className="text-[30px] font-extrabold tabular-nums">
-                {mockUser.stats.bestPace}
+                {bestPace}
               </span>
             }
           />
@@ -106,7 +170,7 @@ export default function MyinfoPage() {
             title="러닝"
             value={
               <span className="text-[24px] font-extrabold tabular-nums">
-                {mockUser.stats.totalRuns.toString().padStart(2, '0')}
+                {(stats?.totalRuns ?? 0).toString().padStart(2, '0')}
               </span>
             }
           />
@@ -114,7 +178,7 @@ export default function MyinfoPage() {
             title="시간"
             value={
               <span className="text-[24px] font-extrabold tabular-nums">
-                {mockUser.stats.totalTime}
+                {totalTime}
               </span>
             }
           />
@@ -124,53 +188,65 @@ export default function MyinfoPage() {
       <section className="mt-4 border-t border-gray3">
         <h2 className="px-5 py-3 text-sem18 text-black">나의 러닝 기록</h2>
 
-        <ul className="divide-y divide-gray3">
-          {runs.map((r) => (
-            <li
-              key={r.id}
-              className="px-5 py-3"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <span
-                    className="inline-block rounded-full px-2 py-0.5 text-reg12 mb-1"
-                    style={{ background: TAG_BG[r.type], color: '#111827' }}
-                  >
-                    {r.type === 'safe'
-                      ? '안전'
-                      : r.type === 'normal'
-                        ? '보통'
-                        : '최단'}
-                  </span>
+        {loading && <div className="px-5 pb-6 text-gray1">불러오는 중…</div>}
 
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-med18 text-black">{r.name}</span>
-                    <span className="text-reg16 text-gray1">
-                      {r.distanceKm}km
-                    </span>
-                  </div>
-                </div>
+        {!loading && error && (
+          <div className="px-5 pb-6 text-red-500">{error}</div>
+        )}
 
-                <div className="text-right">
-                  <div className="text-med14 text-black mr-3">{r.date}</div>
-                  <div className="text-sem18 text-black font-bold tabular-nums">
-                    {r.duration}
+        {!loading && !error && (
+          <ul className="divide-y divide-gray3">
+            {(stats?.recentRuns ?? []).map((r) => {
+              const paceNoKm = stripKmSuffix(r.pace);
+              const dateLabel = dateMD(r.startTime);
+              const dur = minutesToPrettyHM(r.durationMinutes); // "HH:MM"
+              const tagBg = WEATHER_BG[r.weather] ?? '#E5E7EB';
+
+              return (
+                <li
+                  key={r.id}
+                  className="px-5 py-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span
+                        className="mb-1 inline-block rounded-full px-2 py-0.5 text-reg12"
+                        style={{ background: tagBg, color: '#111827' }}
+                      >
+                        {r.weather}
+                      </span>
+
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <span className="text-med18 text-black">
+                          {r.distanceKm}km
+                        </span>
+                        <span className="text-reg16 text-gray1">
+                          {paceNoKm}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="mr-3 text-med14 text-black">
+                        {dateLabel}
+                      </div>
+                      <div className="tabular-nums text-sem18 font-bold text-black">
+                        {dur}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </li>
+              );
+            })}
+
+            {stats && stats.recentRuns.length === 0 && (
+              <li className="px-5 py-6 text-center text-gray1">
+                기록이 아직 없어요.
+              </li>
+            )}
+          </ul>
+        )}
       </section>
-    </div>
-  );
-}
-
-function Metric({ title, value }: { title: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-sem16 text-gray1">{title}</div>
-      <div className="leading-tight">{value}</div>
     </div>
   );
 }
