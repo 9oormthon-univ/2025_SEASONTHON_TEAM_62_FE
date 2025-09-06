@@ -24,7 +24,7 @@ export default function RunningPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const userId = 1;
+  const userId = 7;
 
   const navigate = useNavigate();
 
