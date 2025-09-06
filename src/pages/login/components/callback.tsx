@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useUserStore } from 'store/useUserStore';
+import { useUserStore } from '../../../store/useUserStore';
 
 export default function OAuthCallbackPage() {
   const { search } = useLocation();

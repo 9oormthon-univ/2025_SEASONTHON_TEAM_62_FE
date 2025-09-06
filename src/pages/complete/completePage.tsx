@@ -110,7 +110,7 @@ export default function CompletePage({
   onToggleFavorite,
 }: Props) {
   const location = useLocation();
-  const { state } = location;
+  const searchParams = new URLSearchParams(location.search);
 
   const [loading, setLoading] = useState(false);
   const [apiWaypoints, setApiWaypoints] = useState<Waypoint[]>([]);
@@ -151,10 +151,10 @@ export default function CompletePage({
     fetchRecentPath();
   }, []);
 
-  // URL State에서 데이터 가져오기 (없으면 props의 기본값 사용)
-  const finalKm = state?.totalKm ?? totalKm;
-  const finalDuration = state?.durationText ?? durationText;
-  const finalPace = state?.avgPaceText ?? avgPaceText;
+  // URL 쿼리 파라미터에서 데이터 가져오기
+  const finalKm = Number(searchParams.get('totalKm')) ?? totalKm;
+  const finalDuration = searchParams.get('durationText') ?? durationText;
+  const finalPace = searchParams.get('avgPaceText') ?? avgPaceText;
 
   // Zustand Store에서 최종 경로 데이터 가져오기
   const { waypoints: storedWaypoints } = useWaypointStore();
@@ -315,41 +315,6 @@ export default function CompletePage({
           showStartPin={true}
           showEndPin={true}
         />
-      </div>
-
-      {/* 하단 카드 (모바일 풀폭, PC 중앙정렬) */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50">
-        <div className="mx-auto w-full max-w-none px-0 pb-[env(safe-area-inset-bottom)] md:max-w-[560px] md:px-4">
-          <div className="pointer-events-auto w-full rounded-t-[28px] bg-white p-5 shadow-[0_-12px_24px_rgba(0,0,0,0.12)]">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <span
-                  className="inline-block rounded-full px-2.5 py-1 text-[12px] font-semibold text-black"
-                  style={{ background: PLAN_TAG_BG[plan] }}
-                >
-                  {PLAN_LABEL[plan]}
-                </span>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <div className="truncate text-[20px] font-semibold text-black">
-                    {routeName}
-                  </div>
-                  <div className="text-[18px] font-medium text-gray-500">
-                    {routeDistanceKm}km
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F3EEFF]">
-                <FavoriteIcon
-                  checked={favChecked}
-                  onChange={handleFavoriteChange}
-                  disabled={saving}
-                  aria-label={favChecked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

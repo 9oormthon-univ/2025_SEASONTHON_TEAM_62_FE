@@ -68,7 +68,7 @@ export default function MatePage() {
 
     async function loadCrews() {
       try {
-        const res = await api.get('/api/test/crews');
+        const res = await api.get('/api/crews');
 
         const crewsRaw =
           res.data?.data?.crews ??

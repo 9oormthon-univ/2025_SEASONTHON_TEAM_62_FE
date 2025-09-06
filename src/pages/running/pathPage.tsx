@@ -4,6 +4,7 @@ import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import StartRunModal from './components/startRunModal';
 import api from '../../shared/apis/api';
+import { useUserStore } from '../../store/useUserStore';
 import {
   estimateSteps,
   normalizeWaypoints,
@@ -36,7 +37,6 @@ const PLAN_COLORS: Record<'safe' | 'normal' | 'fast', string> = {
   fast: '#FFA42C',
 };
 
-const USER_ID = 7;
 
 const DEFAULT_START_POINT: LatLng = { lat: 35.8887, lng: 128.6111 };
 
@@ -54,6 +54,7 @@ type ApiResponse = { routes: ApiRoute[] };
 export default function PathPage() {
   const { search } = useLocation();
   const qs = useMemo(() => new URLSearchParams(search), [search]);
+  const userId = useUserStore((s) => s.userId);
 
   const startName = qs.get('start') ?? '경북대학교 정문';
   const targetDistanceKm = Number(qs.get('distance') ?? '5');
@@ -115,7 +116,7 @@ export default function PathPage() {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://192.168.243.234:5000/api/routes/recommend`,
+          `http://192.0.0.2:9000/api/routes/recommend`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -212,9 +213,7 @@ export default function PathPage() {
       });
 
       setIsOpen(false);
-      navigate(
-        `/running/start?targetDistanceKm=${selectedRoute.distanceKm.toFixed(2)}`,
-      );
+      navigate('/running/start');
     } catch (error: any) {
       console.error('경로 완주 저장 실패:', error);
       const msg =
@@ -228,6 +227,11 @@ export default function PathPage() {
   };
 
   async function toggleFavorite(id: 'safe' | 'normal' | 'fast', next: boolean) {
+    if (!userId) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
     const meta = routeMap[id];
     if (!meta || meta.nodes.length < 2) {
       alert('경로 데이터가 없습니다.');
@@ -244,7 +248,7 @@ export default function PathPage() {
         ]);
 
         const body = {
-          userId: USER_ID,
+          userId: userId,
           name: `${startName} 추천경로 - ${
             id === 'safe' ? '안전' : id === 'normal' ? '보통' : '최단'
           }`,
@@ -254,7 +258,7 @@ export default function PathPage() {
           durationS: Math.round(meta.etaMin * 60),
           safetyScore: meta.safetyScore,
           safetyLevel:
-            id === 'safe' ? 'SAFE' : id === 'normal' ? 'BALANCED' : 'FAST',
+            id === 'safe' ? 'SAFE' : id === 'normal' ? 'MEDIUM' : 'UNSAFE',
           tags: [id],
         };
 
@@ -272,7 +276,7 @@ export default function PathPage() {
           throw new Error('삭제할 즐겨찾기 ID가 없습니다.');
         }
         await api.delete(`/api/favorites/${favId}`, {
-          params: { userId: USER_ID },
+          params: { userId: userId },
         });
         setFavoriteIdMap((m) => ({ ...m, [id]: null }));
       }

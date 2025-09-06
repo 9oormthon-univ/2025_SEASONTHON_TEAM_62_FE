@@ -88,7 +88,7 @@ export default function MatePathPage() {
         maxParticipants: Number(data.participants || participants || 0),
         routeId: 'manual',
         type: 'RUN',
-        distanceKmValue: Number(
+        distanceKm: Number(
           parseFloat((prefill.distanceText || '0').replace('km', '').trim()) ||
             0,
         ),
@@ -107,7 +107,7 @@ export default function MatePathPage() {
         ),
       };
 
-      const res = await api.post('/api/test/crews', payload);
+      const res = await api.post('/api/crews', payload);
       console.log('✅ 등록 성공 raw:', res.data);
 
       // 응답에서 생성된 객체/ID 최대한 탄탄하게 뽑기
@@ -129,7 +129,7 @@ export default function MatePathPage() {
       const createdCrew = {
         id: createdId ?? Date.now(),
         startLocation: payload.startLocation,
-        distanceKmValue: payload.distanceKmValue,
+        distanceKm: payload.distanceKm,
         safetyLevel: payload.safetyLevel,
         durationMin: payload.durationMin,
         pace: payload.pace,

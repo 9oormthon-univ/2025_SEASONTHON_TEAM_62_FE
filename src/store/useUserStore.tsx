@@ -1,4 +1,4 @@
-import api from 'shared/apis/api';
+import api from '../shared/apis/api';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -25,12 +25,21 @@ export const useUserStore = create<UserState>()(
       profile: null,
       ready: false,
       hydrateUserFromMe: async () => {
-        const { data } = await api.get<MeResponse>('/api/user/me'); // 쿠키 기반
-        set({
-          userId: data.id ?? null,
-          profile: data ?? null,
-          ready: true,
-        });
+        try {
+          const { data } = await api.get<MeResponse>('/api/user/me'); // 쿠키 기반
+          set({
+            userId: data.id ?? null,
+            profile: data ?? null,
+            ready: true,
+          });
+        } catch (error) {
+          console.log('사용자 정보 로드 실패 (로그인되지 않음):', error);
+          set({
+            userId: null,
+            profile: null,
+            ready: true,
+          });
+        }
       },
       clear: () => set({ userId: null, profile: null, ready: true }),
     }),

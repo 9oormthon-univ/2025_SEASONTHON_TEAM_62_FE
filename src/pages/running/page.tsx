@@ -7,6 +7,7 @@ import {
   fetchFavorites,
   type FavoriteRoute,
 } from '../../shared/apis/running/favoritesApi';
+import { useUserStore } from '../../store/useUserStore';
 
 export type RouteItem = FavoriteRoute & {
   id: number | string;
@@ -66,11 +67,8 @@ export default function RunningPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // const { userId, ready } = useUserStore((s) => ({
-  //   userId: s.userId,
-  //   ready: s.ready,
-  // }));
-  const userId = 7;
+  const userId = useUserStore((s) => s.userId);
+  const ready = useUserStore((s) => s.ready);
   const navigate = useNavigate();
 
   // 🔹 MatePathPage에서 경유해서 왔는지 체크 (이 경우 다시 MatePathPage로 돌려보내야 함)
@@ -106,6 +104,15 @@ export default function RunningPage() {
     let ignore = false;
 
     async function run() {
+      if (!ready) {
+        return;
+      }
+
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -126,7 +133,7 @@ export default function RunningPage() {
     return () => {
       ignore = true;
     };
-  }, [userId]);
+  }, [userId, ready]);
 
   const listToRender = useMemo(
     () => (activeTab === 'favorites' ? favorites : recentRoutes),

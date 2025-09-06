@@ -3,6 +3,7 @@ import GlobalLayout from '../shared/layouts/global-layout';
 import NotFoundPage from '../pages/NotFoundPage';
 
 import LoginPage from '../pages/login/LoginPage';
+import OAuthCallbackPage from '../pages/login/components/callback';
 import RunningPage from '../pages/running/page';
 import MatePage from '../pages/mate/page';
 import MatePathPage from '../pages/mate/matePathPage';
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { index: true, element: <RunningPage /> },
       { path: 'splash', element: <SplashPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'oauth/callback', element: <OAuthCallbackPage /> },
       { path: 'mate', element: <MatePage /> },
       { path: 'myinfo', element: <MyinfoPage /> },
       { path: 'running', element: <RunningPage /> },

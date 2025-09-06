@@ -425,14 +425,11 @@ export default function StartPage() {
     );
     setWaypoints(finalWaypoints);
 
-    // 완료 페이지로 이동하며 데이터 전달
-    navigate('/running/complete', {
-      state: {
-        totalKm: finalDistance / 1000,
-        durationText: formatClock(finalElapsed),
-        avgPaceText: formatPace(finalDistance / 1000, finalElapsed),
-      },
-    });
+    navigate(
+      `/running/complete?totalKm=${finalDistance / 1000}&durationText=${formatClock(
+        finalElapsed,
+      )}&avgPaceText=${formatPace(finalDistance / 1000, finalElapsed)}`,
+    );
   };
 
   const clock = formatClock(elapsed);
