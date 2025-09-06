@@ -1,9 +1,11 @@
+
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import StartRunModal from './components/startRunModal';
-import api from '../../shared/apis/api'; // axios 인스턴스 (withCredentials 설정되어 있음)
+import api from '../../shared/apis/api';
+import { FavoriteIcon } from '../../shared/components/favoriteIcon';
 
 type LatLng = { lat: number; lng: number };
 type GraphNode = { id: string; lat: number; lng: number };
@@ -14,8 +16,9 @@ type PlanCard = {
   label: '안전' | '보통' | '최단';
   distanceKm: number;
   steps: number;
-  etaText: string; // 예: "31분" 또는 "1시간 5분"
+  etaText: string; // "31분" 또는 "1시간 5분"
   color: string;
+  safetyScore: number;
 };
 
 const PLAN_COLORS: Record<'safe' | 'normal' | 'fast', string> = {
@@ -27,12 +30,11 @@ const PLAN_COLORS: Record<'safe' | 'normal' | 'fast', string> = {
 const API_BASE = (import.meta as any).env.VITE_API_BASE_URL as string;
 const USER_ID = 7;
 
-// ----------------------- 유틸 -----------------------
+// ---------------- 유틸 ----------------
 
 function normalizeWaypoints(raw: unknown): [number, number][] {
   if (!Array.isArray(raw)) return [];
 
-  // "35.891,128.6149"[] 형태
   if (raw.length > 0 && typeof raw[0] === 'string') {
     return (raw as string[])
       .map((s) => s.split(',').map((v) => parseFloat(String(v).trim())))
@@ -40,7 +42,6 @@ function normalizeWaypoints(raw: unknown): [number, number][] {
       .map(([lat, lng]) => [lat, lng]);
   }
 
-  // [[lat,lng], ...] 형태
   return (raw as any[])
     .map((pair) => {
       if (!Array.isArray(pair) || pair.length < 2) return null;
@@ -78,67 +79,9 @@ function estimateSteps(km: number) {
   return Math.round(km * 1300);
 }
 
-// ---------------- 기본 좌표 & 목데이터 ----------------
+// ---------------- 기본값 ----------------
 
-const DEFAULT_POINTS: LatLng[] = [
-  { lat: 35.8887, lng: 128.6111 },
-  { lat: 35.8881, lng: 128.6129 },
-  { lat: 35.8871, lng: 128.6125 },
-  { lat: 35.8866, lng: 128.611 },
-  { lat: 35.8864, lng: 128.609 },
-  { lat: 35.8878, lng: 128.6079 },
-  { lat: 35.8898, lng: 128.6089 },
-  { lat: 35.8906, lng: 128.6109 },
-  { lat: 35.891, lng: 128.6149 },
-];
-
-const MOCK_RECOMMEND_RESPONSE = {
-  routes: [
-    {
-      type: 'safe',
-      distance_km: 5.1,
-      safety_score: 92,
-      estimated_time_min: 31,
-      waypoints: [
-        [DEFAULT_POINTS[0].lat, DEFAULT_POINTS[0].lng],
-        [DEFAULT_POINTS[1].lat, DEFAULT_POINTS[1].lng],
-        [DEFAULT_POINTS[2].lat, DEFAULT_POINTS[2].lng],
-        [DEFAULT_POINTS[3].lat, DEFAULT_POINTS[3].lng],
-        [DEFAULT_POINTS[4].lat, DEFAULT_POINTS[4].lng],
-        [DEFAULT_POINTS[5].lat, DEFAULT_POINTS[5].lng],
-        [DEFAULT_POINTS[6].lat, DEFAULT_POINTS[6].lng],
-        [DEFAULT_POINTS[7].lat, DEFAULT_POINTS[7].lng],
-        [DEFAULT_POINTS[8].lat, DEFAULT_POINTS[8].lng],
-      ],
-    },
-    {
-      type: 'balanced',
-      distance_km: 5.0,
-      safety_score: 75,
-      estimated_time_min: 30,
-      waypoints: [
-        [DEFAULT_POINTS[0].lat, DEFAULT_POINTS[0].lng],
-        [DEFAULT_POINTS[2].lat, DEFAULT_POINTS[2].lng],
-        [DEFAULT_POINTS[3].lat, DEFAULT_POINTS[3].lng],
-        [DEFAULT_POINTS[5].lat, DEFAULT_POINTS[5].lng],
-        [DEFAULT_POINTS[7].lat, DEFAULT_POINTS[7].lng],
-        [DEFAULT_POINTS[8].lat, DEFAULT_POINTS[8].lng],
-      ],
-    },
-    {
-      type: 'shortest',
-      distance_km: 4.9,
-      safety_score: 60,
-      estimated_time_min: 29,
-      waypoints: [
-        [DEFAULT_POINTS[0].lat, DEFAULT_POINTS[0].lng],
-        [DEFAULT_POINTS[3].lat, DEFAULT_POINTS[3].lng],
-        [DEFAULT_POINTS[6].lat, DEFAULT_POINTS[6].lng],
-        [DEFAULT_POINTS[8].lat, DEFAULT_POINTS[8].lng],
-      ],
-    },
-  ],
-} as const;
+const DEFAULT_START_POINT: LatLng = { lat: 35.8887, lng: 128.6111 };
 
 type ApiRoute = {
   type: 'safe' | 'balanced' | 'shortest';
@@ -149,7 +92,7 @@ type ApiRoute = {
 };
 type ApiResponse = { routes: ApiRoute[] };
 
-// ------------------- 컴포넌트 -------------------
+// ---------------- 컴포넌트 ----------------
 
 export default function PathPage() {
   const { search } = useLocation();
@@ -162,12 +105,11 @@ export default function PathPage() {
   const targetPace = `${paceMin}'${String(paceSec).padStart(2, '0')}"`;
 
   const [isOpen, setIsOpen] = useState(false);
+  const [startingRun, setStartingRun] = useState(false);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-  const [usedMock, setUsedMock] = useState(false);
 
-  // 추천 결과 저장
   const [routeMap, setRouteMap] = useState<
     Partial<
       Record<
@@ -177,34 +119,34 @@ export default function PathPage() {
           links: GraphLink[];
           distanceKm: number;
           etaMin: number;
+          safetyScore: number;
         }
       >
     >
   >({});
 
-  // 즐겨찾기 상태
+  // 즐겨찾기 생성/삭제 상태
   const [savingMap, setSavingMap] = useState<
     Record<'safe' | 'normal' | 'fast', boolean>
-  >({
-    safe: false,
-    normal: false,
-    fast: false,
-  });
+  >({ safe: false, normal: false, fast: false });
+
   const [favoritedMap, setFavoritedMap] = useState<
     Record<'safe' | 'normal' | 'fast', boolean>
-  >({
-    safe: false,
-    normal: false,
-    fast: false,
-  });
+  >({ safe: false, normal: false, fast: false });
+
+  // 생성된 favorite의 서버 ID 저장(삭제용)
+  const [favoriteIdMap, setFavoriteIdMap] = useState<
+    Record<'safe' | 'normal' | 'fast', number | null>
+  >({ safe: null, normal: null, fast: null });
 
   const [selectedId, setSelectedId] = useState<'safe' | 'normal' | 'fast'>(
     'safe',
   );
   const current = routeMap[selectedId];
 
+  // 추천 API 호출
   useEffect(() => {
-    const startPoint = DEFAULT_POINTS[0]; // 실제 시작 좌표가 있으면 대입
+    const startPoint = DEFAULT_START_POINT;
     const body = {
       start_point: [startPoint.lat, startPoint.lng],
       distance_km: targetDistanceKm,
@@ -214,14 +156,15 @@ export default function PathPage() {
     let ignore = false;
     (async () => {
       setLoading(true);
-      setUsedMock(false);
       try {
-        const res = await fetch(`${API_BASE}/api/routes/recommend`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+        const res = await fetch(
+          `http://192.168.243.234:5000/api/routes/recommend`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          },
+        );
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: ApiResponse = await res.json();
@@ -242,32 +185,15 @@ export default function PathPage() {
             links,
             distanceKm: r.distance_km,
             etaMin: r.estimated_time_min,
+            safetyScore: r.safety_score,
           };
         });
 
         if (!ignore) setRouteMap(next);
-      } catch {
-        // 실패 시 목데이터
-        const next: typeof routeMap = {};
-        MOCK_RECOMMEND_RESPONSE.routes.forEach((r) => {
-          const wps = normalizeWaypoints(r.waypoints);
-          const { nodes, links } = toNodesAndLinks(wps);
-          const id: 'safe' | 'normal' | 'fast' =
-            r.type === 'safe'
-              ? 'safe'
-              : r.type === 'balanced'
-                ? 'normal'
-                : 'fast';
-          next[id] = {
-            nodes,
-            links,
-            distanceKm: r.distance_km,
-            etaMin: r.estimated_time_min,
-          };
-        });
+      } catch (error) {
+        console.error('경로 추천 API 호출 실패:', error);
         if (!ignore) {
-          setRouteMap(next);
-          setUsedMock(true);
+          alert('경로를 불러오는데 실패했습니다. 다시 시도해주세요.');
         }
       } finally {
         if (!ignore) setLoading(false);
@@ -278,6 +204,14 @@ export default function PathPage() {
       ignore = true;
     };
   }, [targetDistanceKm, paceMin, paceSec]);
+
+  function etaTextFromMinutes(mins: number) {
+    if (!Number.isFinite(mins)) return '—';
+    const total = Math.round(mins);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+  }
 
   // 카드 데이터
   const planCards: PlanCard[] = useMemo(() => {
@@ -292,67 +226,141 @@ export default function PathPage() {
         steps: estimateSteps(dist),
         etaText: etaTextFromMinutes(minutes),
         color: PLAN_COLORS[id],
+        safetyScore: meta?.safetyScore ?? 0,
       };
     });
   }, [routeMap, targetDistanceKm, paceMin]);
 
-  const handleStart = () => {
-    setIsOpen(false);
-    navigate(`/running/start`);
+  // 러닝 시작하기 - 선택된 경로 저장 후 시작
+  const handleStart = async () => {
+    const selectedRoute = routeMap[selectedId];
+
+    if (!selectedRoute || !selectedRoute.nodes.length) {
+      alert('선택된 경로가 없습니다.');
+      return;
+    }
+
+    setStartingRun(true);
+
+    try {
+      // 선택된 경로를 서버에 저장
+      const waypoints = selectedRoute.nodes.map((node) => [
+        Number(node.lat.toFixed(6)),
+        Number(node.lng.toFixed(6)),
+      ]);
+
+      const routeData = {
+        userId: USER_ID,
+        routeType: selectedId,
+        startPoint: waypoints[0],
+        waypoints: waypoints,
+        distanceKm: selectedRoute.distanceKm,
+        estimatedTimeMin: selectedRoute.etaMin,
+        safetyScore: selectedRoute.safetyScore,
+        targetPaceMinPerKm: paceMin + paceSec / 60,
+      };
+
+      const response = await fetch(
+        'http://192.168.243.234:5000/api/selected-route',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(routeData),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('선택된 경로 저장 성공:', result);
+
+      // 러닝 시작 페이지로 이동
+      setIsOpen(false);
+      navigate(`/running/start?routeId=${result.id || ''}`);
+    } catch (error) {
+      console.error('선택된 경로 저장 실패:', error);
+      alert('러닝을 시작하는데 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setStartingRun(false);
+    }
   };
 
-  // 즐겨찾기 생성
-  async function handleFavoriteCreate(id: 'safe' | 'normal' | 'fast') {
-    if (favoritedMap[id]) return; // 이미 생성됨
+  // 즐겨찾기 토글 (생성/삭제)
+  async function toggleFavorite(id: 'safe' | 'normal' | 'fast', next: boolean) {
     const meta = routeMap[id];
     if (!meta || meta.nodes.length < 2) {
       alert('경로 데이터가 없습니다.');
       return;
     }
 
+    // 낙관적 UI 반영
+    setSavingMap((m) => ({ ...m, [id]: true }));
+    setFavoritedMap((m) => ({ ...m, [id]: next }));
+
     try {
-      setSavingMap((m) => ({ ...m, [id]: true }));
+      if (next) {
+        // CREATE
+        const waypoints: [number, number][] = meta.nodes.map((n) => [
+          Number(n.lat.toFixed(6)),
+          Number(n.lng.toFixed(6)),
+        ]);
 
-      // 서버 스펙 상 waypoints는 [[lat,lng], ...] (숫자 쌍 배열)로 전송
-      const waypoints: [number, number][] = meta.nodes.map((n) => [
-        Number(n.lat.toFixed(6)),
-        Number(n.lng.toFixed(6)),
-      ]);
+        const body = {
+          userId: USER_ID,
+          name: `${startName} 추천경로 - ${
+            id === 'safe' ? '안전' : id === 'normal' ? '보통' : '최단'
+          }`,
+          waypoints,
+          savedPolyline: '',
+          distanceM: Math.round(meta.distanceKm * 1000),
+          durationS: Math.round(meta.etaMin * 60),
+          safetyScore: meta.safetyScore,
+          safetyLevel:
+            id === 'safe' ? 'SAFE' : id === 'normal' ? 'BALANCED' : 'FAST',
+          tags: [id],
+        };
 
-      const body = {
-        userId: USER_ID,
-        name: `${startName} 추천경로 - ${id === 'safe' ? '안전' : id === 'normal' ? '보통' : '최단'}`,
-        waypoints,
-        savedPolyline: '', // 필요시 서버에서 생성/무시
-        distanceM: Math.round(meta.distanceKm * 1000),
-        durationS: Math.round(meta.etaMin * 60),
-      };
+        const { data } = await api.post('/api/favorites', body);
+        // 성공 응답에서 ID 추출(백엔드 포맷에 방어적으로 대응)
+        const favId: number | undefined =
+          data?.data?.id ?? data?.id ?? data?.favoriteId;
+        if (!favId) throw new Error('즐겨찾기 ID를 받지 못했습니다.');
 
-      const { data } = await api.post('/api/favorites', body);
-      const ok =
-        data?.success === 'true' ||
-        data?.success === true ||
-        !('success' in data);
-      if (!ok) throw new Error(data?.msg || '즐겨찾기 생성 실패');
-
-      setFavoritedMap((m) => ({ ...m, [id]: true }));
-      // UX: 간단 알림
-      console.log('✅ 즐겨찾기 생성 완료:', data);
+        setFavoriteIdMap((m) => ({ ...m, [id]: favId }));
+      } else {
+        // DELETE
+        const favId = favoriteIdMap[id];
+        if (!favId) {
+          // 서버 ID가 없으면 그냥 롤백
+          throw new Error('삭제할 즐겨찾기 ID가 없습니다.');
+        }
+        await api.delete(`/api/favorites/${favId}`, {
+          params: { userId: USER_ID },
+        });
+        setFavoriteIdMap((m) => ({ ...m, [id]: null }));
+      }
     } catch (e: any) {
-      console.error('❌ 즐겨찾기 생성 실패:', e);
-      alert(e?.message ?? '즐겨찾기 생성에 실패했습니다.');
+      console.error('❌ 즐겨찾기 토글 실패:', e);
+      // 롤백
+      setFavoritedMap((m) => ({ ...m, [id]: !next }));
+      alert(e?.message ?? '즐겨찾기 처리에 실패했습니다.');
     } finally {
       setSavingMap((m) => ({ ...m, [id]: false }));
     }
   }
 
   // 현재 선택 경로 노출(없으면 시작점만)
-  const nodes = current?.nodes ?? [{ id: 'start', ...DEFAULT_POINTS[0] }];
+  const nodes = current?.nodes ?? [{ id: 'start', ...DEFAULT_START_POINT }];
   const links = (current?.links ?? []).map((l, i) => ({
     ...l,
     id: l.id ?? `seg-${i}`,
     color: PLAN_COLORS[selectedId],
   }));
+
+  // 경로 데이터가 없는 경우 처리
+  const hasRouteData = Object.keys(routeMap).length > 0;
 
   return (
     <div className="flex h-dvh flex-col bg-white">
@@ -378,9 +386,9 @@ export default function PathPage() {
         />
         <InfoRow
           label="거리"
-          value={`${(routeMap[selectedId]?.distanceKm ?? targetDistanceKm).toFixed(1)}km${
-            usedMock ? ' · 목데이터' : ''
-          }`}
+          value={`${(
+            routeMap[selectedId]?.distanceKm ?? targetDistanceKm
+          ).toFixed(1)}km`}
         />
         <InfoRow
           label="목표 페이스"
@@ -392,7 +400,19 @@ export default function PathPage() {
       <div className="relative flex-1">
         {loading && (
           <div className="absolute inset-0 z-40 grid place-items-center bg-white/60">
-            추천 경로 계산중…
+            <div className="text-center">
+              <div className="mb-2">추천 경로 계산중...</div>
+              <div className="text-sm text-gray-500">잠시만 기다려주세요</div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !hasRouteData && (
+          <div className="absolute inset-0 z-40 grid place-items-center bg-white/60">
+            <div className="text-center">
+              <div className="mb-2">경로를 불러올 수 없습니다</div>
+              <div className="text-sm text-gray-500">다시 시도해주세요</div>
+            </div>
           </div>
         )}
 
@@ -403,32 +423,34 @@ export default function PathPage() {
           showEndPin={false}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(56px+12px+env(safe-area-inset-bottom))] z-40">
-          <div className="mx-auto w-full max-w-[560px] px-4">
-            <div className="rounded-3xl p-3">
-              <div
-                className="
-                  pointer-events-auto flex gap-3 overflow-x-auto pb-1
-                  snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none]
-                  [touch-action:pan-x] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden
-                "
-                style={{ scrollbarWidth: 'none' }}
-              >
-                {planCards.map((c) => (
-                  <PlanCardItem
-                    key={c.id}
-                    item={c}
-                    selected={selectedId === c.id}
-                    onClick={() => setSelectedId(c.id)}
-                    onFavorite={() => handleFavoriteCreate(c.id)}
-                    favorited={favoritedMap[c.id]}
-                    saving={savingMap[c.id]}
-                  />
-                ))}
+        {hasRouteData && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-[calc(56px+12px+env(safe-area-inset-bottom))] z-40">
+            <div className="mx-auto w-full max-w-[560px] px-4">
+              <div className="rounded-3xl p-3">
+                <div
+                  className="
+                    pointer-events-auto flex gap-3 overflow-x-auto pb-1
+                    snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none]
+                    [touch-action:pan-x] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden
+                  "
+                  style={{ scrollbarWidth: 'none' }}
+                >
+                  {planCards.map((c) => (
+                    <PlanCardItem
+                      key={c.id}
+                      item={c}
+                      selected={selectedId === c.id}
+                      onClick={() => setSelectedId(c.id)}
+                      favoriteChecked={favoritedMap[c.id]}
+                      favoriteLoading={savingMap[c.id]}
+                      onFavoriteChange={(next) => toggleFavorite(c.id, next)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* CTA */}
@@ -436,9 +458,10 @@ export default function PathPage() {
         <div className="flex w-full justify-center">
           <button
             onClick={() => setIsOpen(true)}
-            className="pointer-events-auto h-14 w-full max-w-[430px] bg-main3 px-4 text-sem16 text-white pb-[env(safe-area-inset-bottom)]"
+            disabled={!hasRouteData || startingRun}
+            className="pointer-events-auto h-14 w-full max-w-[430px] bg-main3 px-4 text-sem16 text-white pb-[env(safe-area-inset-bottom)] disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            러닝 시작하기
+            {startingRun ? '러닝 준비중...' : '러닝 시작하기'}
           </button>
         </div>
       </div>
@@ -455,22 +478,20 @@ export default function PathPage() {
   );
 }
 
-// ------------------- 서브 컴포넌트 -------------------
-
 function PlanCardItem({
   item,
   selected,
   onClick,
-  onFavorite,
-  favorited,
-  saving,
+  favoriteChecked,
+  favoriteLoading,
+  onFavoriteChange,
 }: {
   item: PlanCard;
   selected: boolean;
   onClick: () => void;
-  onFavorite: () => void;
-  favorited: boolean;
-  saving: boolean;
+  favoriteChecked: boolean;
+  favoriteLoading: boolean;
+  onFavoriteChange: (next: boolean) => void;
 }) {
   const TAG_BG: Record<PlanCard['id'], string> = {
     safe: '#B3FFC6',
@@ -478,56 +499,53 @@ function PlanCardItem({
     fast: '#FFDFB3',
   };
 
-  // "1시간 5분" 또는 "31분"에서 시/분 추출
   const hh = item.etaText.match(/(\d+)\s*시간/);
   const mm = item.etaText.match(/(\d+)\s*분/);
-  const hours = hh?.[1] ?? ''; // 없다면 빈 문자열
+  const hours = hh?.[1] ?? '';
   const mins = mm?.[1] ?? '';
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick();
+      }}
       className={[
-        'snap-start pointer-events-auto h-[110px] w-[140px] shrink-0 rounded-[8px] bg-white px-3 py-2 text-left',
+        'snap-start pointer-events-auto h-[110px] w-[150px] shrink-0 rounded-[8px] bg-white px-3 py-2 text-left',
         selected ? 'border-[2px] border-main3' : 'border-[2px] border-white',
       ].join(' ')}
     >
       <div className="mb-1 flex items-center justify-between">
-        <span
-          className="inline-block rounded-full px-2 py-0.5 text-reg12"
-          style={{ background: TAG_BG[item.id], color: '#111827' }}
-        >
-          {item.label}
-        </span>
+        <div className="min-w-0 flex items-center gap-1">
+          <span
+            className="inline-block rounded-full px-2 py-0.5 text-reg12"
+            style={{ background: TAG_BG[item.id], color: '#111827' }}
+          >
+            {item.label}
+          </span>
+          <span className="text-[11px] text-gray-500">
+            · {item.safetyScore}
+          </span>
+        </div>
 
-        {/* 하트 버튼 (카드 클릭과 분리) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!saving) onFavorite();
-          }}
+        <FavoriteIcon
+          checked={favoriteChecked}
+          onChange={onFavoriteChange}
+          disabled={favoriteLoading}
+          aria-label={favoriteChecked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
           className="grid h-6 w-6 place-items-center"
-          aria-label={favorited ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-        >
-          {saving ? (
-            <span className="text-xs">…</span>
-          ) : favorited ? (
-            <span className="text-lg">❤️</span>
-          ) : (
-            <span className="text-lg text-main3">♡</span>
-          )}
-        </button>
+        />
       </div>
 
-      {/* 시간 표시: '분만 있으면 시간 텍스트 제거' */}
-      <div className="flex whitespace-nowrap tabular-nums leading-none items-baseline">
+      <div className="flex items-baseline whitespace-nowrap tabular-nums leading-none">
         {hours && (
           <>
             <span className="text-[28px] font-extrabold tracking-tight">
               {hours}
             </span>
-            <span className="text-[16px] font-medium mr-1">시간</span>
+            <span className="mr-1 text-[16px] font-medium">시간</span>
           </>
         )}
         <span className="text-[28px] font-extrabold tracking-tight">
@@ -539,7 +557,7 @@ function PlanCardItem({
       <div className="mt-1 text-[13px] text-gray1">
         {item.distanceKm.toFixed(1)}km · {item.steps.toLocaleString()}걸음
       </div>
-    </button>
+    </div>
   );
 }
 

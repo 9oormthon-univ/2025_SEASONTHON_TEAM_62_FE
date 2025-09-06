@@ -22,7 +22,10 @@ export default function RunningPage() {
   const [favorites, setFavorites] = useState<RouteItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  // const { userId, ready } = useUserStore((s) => ({
+  //   userId: s.userId,
+  //   ready: s.ready,
+  // }));
   const userId = 7;
   const navigate = useNavigate();
 
