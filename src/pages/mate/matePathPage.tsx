@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import KakaoMapBasic from '../../shared/components/kakaomap/kakaomapBase';
@@ -28,22 +28,29 @@ function mapSafetyToServer(level: string) {
   return 'NORMAL';
 }
 
+type Prefill = {
+  safeLabel: '안전' | '보통' | '최단';
+  placeName: string;
+  distanceText: string;
+  showMateSheet: boolean;
+};
+
 export default function MatePathPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 즐겨찾기에서 넘겨준 값만 사용(없으면 기본 폴백)
-  const { safeLabel, placeName, distanceText, showMateSheet } = useMemo(() => {
+  // ✅ location.state를 "한 번만" 스냅샷으로 보관 (replace로 state 비워도 값 유지)
+  const [prefill] = useState<Prefill>(() => {
     const s = (location.state ?? {}) as any;
     return {
-      safeLabel: s.safeLabel ?? '보통',
+      safeLabel: (s.safeLabel as Prefill['safeLabel']) ?? '보통',
       placeName: s.placeName ?? '경북대학교 정문',
       distanceText: s.distanceText ?? '5km',
       showMateSheet: !!s.showMateSheet,
     };
-  }, [location.state]);
+  });
 
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState<boolean>(prefill.showMateSheet);
 
   // 입력 상태(필요 시 외부 인풋으로 대체 가능)
   const [mm, setMm] = useState(''); // pace 분
@@ -53,13 +60,12 @@ export default function MatePathPage() {
   const [participants, setParticipants] = useState(''); // 모집 인원
 
   useEffect(() => {
-    if (showMateSheet) {
-      setSheetOpen(true);
-      // state 1회성 제거
+    if (prefill.showMateSheet) {
+      // 시트 열고, URL state만 정리 (스냅샷은 유지됨)
       navigate(location.pathname, { replace: true, state: null });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key]);
+  }, []); // 최초 1회만
 
   // 등록하기 → api.post → createdId/createdCrew 함께 넘겨서 MatePage가 즉시 렌더할 수 있게
   async function handleCreate(data: {
@@ -76,21 +82,22 @@ export default function MatePathPage() {
       );
 
       const payload = {
-        title: placeName, // 출발지점
-        description: distanceText, // 거리 그대로
+        title: prefill.placeName, // 출발지점
+        description: prefill.distanceText, // 거리 그대로
         status: 'OPEN',
         maxParticipants: Number(data.participants || participants || 0),
         routeId: 'manual',
         type: 'RUN',
         distanceKmValue: Number(
-          parseFloat((distanceText || '0').replace('km', '').trim()) || 0,
+          parseFloat((prefill.distanceText || '0').replace('km', '').trim()) ||
+            0,
         ),
         safetyScore: 0,
-        safetyLevel: mapSafetyToServer(safeLabel), // '안전' → 'SAFE' 등
+        safetyLevel: mapSafetyToServer(prefill.safeLabel), // '안전' → 'SAFE' 등
         durationMin: 0,
         waypoints: [] as string[],
         tags,
-        startLocation: placeName,
+        startLocation: prefill.placeName,
         pace: `${String(data.targetPace.mm ?? mm ?? 0).padStart(2, '0')}:${String(
           data.targetPace.ss ?? ss ?? 0,
         ).padStart(2, '0')}`,
@@ -176,9 +183,9 @@ export default function MatePathPage() {
       {/* 시트: 열렸을 때만 렌더 */}
       {sheetOpen && (
         <MateRouteSheet
-          safe={safeLabel}
-          place={placeName}
-          distance={distanceText}
+          safe={prefill.safeLabel}
+          place={prefill.placeName}
+          distance={prefill.distanceText}
           targetPace={{ mm: Number(mm) || 0, ss: Number(ss) || 0 }}
           startTime={{ hh: Number(hh) || 0, mm: Number(startMm) || 0 }}
           participants={Number(participants) || 0}
