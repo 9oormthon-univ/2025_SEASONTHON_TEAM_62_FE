@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { IcSvgPencil, IcSvgTalk } from '../../../shared/icons';
+import { useNavigate } from 'react-router-dom';
 
 type FloatingButtonProps = {
   children: ReactNode;
@@ -20,6 +21,7 @@ function FloatingButton({ children, onClick, label }: FloatingButtonProps) {
 }
 
 export default function FloatingActions() {
+  const navigate = useNavigate();
   return (
     <div className="fixed inset-x-0 z-[5] bottom-[calc(76px+env(safe-area-inset-bottom))] pointer-events-none">
       <div className="mx-auto w-[375px] max-w-full px-2 flex flex-col items-end gap-2 pointer-events-auto">
@@ -30,7 +32,10 @@ export default function FloatingActions() {
           />
         </FloatingButton>
 
-        <FloatingButton label="글쓰기">
+        <FloatingButton
+          label="글쓰기"
+          onClick={() => navigate('/mate/matepath')}
+        >
           <IcSvgPencil
             width={20}
             height={20}

@@ -1,14 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+// RunningPage.tsx
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RunningBottomSheet } from './components/runningBottomSheet';
 import SearchCenterMap from '../../shared/components/kakaomap/searchCenterMap';
 import RouteListItem from './components/listItem';
-import {
-  fetchFavorites,
-  type FavoriteRoute,
-} from '../../shared/apis/running/favoritesApi';
 
-export type RouteItem = FavoriteRoute;
+export type RouteItem = {
+  id: number;
+  name: string;
+  distanceKm: number;
+  type: 'safe' | 'normal' | 'fast';
+};
+
+const favoritePlaces: RouteItem[] = [
+  { id: 1, name: '경북대학교 정문', distanceKm: 5, type: 'safe' },
+  { id: 2, name: '경북대학교 정문', distanceKm: 5, type: 'safe' },
+  { id: 3, name: '경북대학교 정문', distanceKm: 5, type: 'safe' },
+  { id: 4, name: '경북대학교 정문', distanceKm: 5, type: 'safe' },
+];
 
 const recentRoutes: RouteItem[] = [
   { id: 10, name: '신천동로 코스', distanceKm: 3, type: 'normal' },
@@ -20,57 +29,37 @@ export default function RunningPage() {
   const [activeTab, setActiveTab] = useState<'favorites' | 'recent'>(
     'favorites',
   );
-  const [favorites, setFavorites] = useState<RouteItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const userId = 7;
-
   const navigate = useNavigate();
 
   const handleItemClick = (item: RouteItem) => {
     navigate(`/running/${item.id}`);
   };
 
-  useEffect(() => {
-    let ignore = false;
-    async function run() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchFavorites(userId);
-        if (!ignore) setFavorites(data);
-      } catch (e: any) {
-        if (!ignore) setError(e?.message ?? '즐겨찾기 조회에 실패했습니다.');
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    }
-    run();
-    return () => {
-      ignore = true;
-    };
-  }, [userId]);
-
-  const listToRender = useMemo(
-    () => (activeTab === 'favorites' ? favorites : recentRoutes),
-    [activeTab, favorites],
-  );
-
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <SearchCenterMap fillParent />
+        <SearchCenterMap
+          fillParent
+          // ✅ 사용자가 검색으로 출발지를 확정했을 때만 호출됨
+          onSelectStart={(p) => {
+            const qs = new URLSearchParams({
+              start: p.name,
+              startLat: String(p.lat),
+              startLng: String(p.lng),
+            }).toString();
+            navigate(`/running/detail?${qs}`);
+          }}
+        />
       </div>
 
       <div className="relative z-5">
         <RunningBottomSheet open={isBottomSheetOpen}>
           <div className="px-5 pb-14">
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex justify-center items-center gap-3">
               <button
                 onClick={() => setActiveTab('favorites')}
                 className={[
-                  'rounded-[20px] px-12 py-2 font-semibold transition-colors duration-200',
+                  'rounded-[20px] py-2 px-12 font-semibold transition-colors duration-200',
                   activeTab === 'favorites'
                     ? 'border-2 border-main2 text-main2'
                     : 'border-2 border-gray3 text-gray1',
@@ -81,7 +70,7 @@ export default function RunningPage() {
               <button
                 onClick={() => setActiveTab('recent')}
                 className={[
-                  'rounded-[20px] px-12 py-2 font-semibold transition-colors duration-200',
+                  'rounded-[20px] py-2 px-12 font-semibold transition-colors duration-200',
                   activeTab === 'recent'
                     ? 'border-2 border-main2 text-main2'
                     : 'border-2 border-gray3 text-gray1',
@@ -93,26 +82,19 @@ export default function RunningPage() {
 
             <div className="mt-4">
               {activeTab === 'favorites' && (
-                <>
-                  {loading && (
-                    <div className="py-8 text-center text-gray1">
-                      불러오는 중…
-                    </div>
-                  )}
-                  {!loading && error && (
-                    <div className="py-8 text-center text-red-500">{error}</div>
-                  )}
-                  {!loading && !error && listToRender.length === 0 && (
-                    <div className="py-8 text-center text-gray1">
-                      즐겨찾기가 비어 있어요.
-                    </div>
-                  )}
-                </>
-              )}
-
-              {!loading && !error && listToRender.length > 0 && (
                 <ul className="divide-y divide-gray3">
-                  {listToRender.map((item) => (
+                  {favoritePlaces.map((item) => (
+                    <RouteListItem
+                      key={item.id}
+                      item={item}
+                      onClick={() => handleItemClick(item)}
+                    />
+                  ))}
+                </ul>
+              )}
+              {activeTab === 'recent' && (
+                <ul className="divide-y divide-gray3 ">
+                  {recentRoutes.map((item) => (
                     <RouteListItem
                       key={item.id}
                       item={item}
