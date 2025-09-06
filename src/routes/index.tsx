@@ -5,6 +5,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 import LoginPage from '../pages/login/LoginPage';
 import RunningPage from '../pages/running/page';
 import MatePage from '../pages/mate/page';
+import MatePathPage from '../pages/mate/matePathPage';
 import MyinfoPage from '../pages/myinfo/page';
 import DetailPage from '../pages/running/[id]';
 import PathPage from '../pages/running/pathPage';
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: 'running/:id', element: <DetailPage /> },
       { path: 'running/:id/path', element: <PathPage /> },
       { path: 'running/start', element: <StartPage /> },
+      { path: 'mate/matepath', element: <MatePathPage /> },
     ],
   },
 ]);

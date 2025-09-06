@@ -1,3 +1,4 @@
+// RunningPage.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RunningBottomSheet } from './components/runningBottomSheet';
@@ -37,7 +38,18 @@ export default function RunningPage() {
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <SearchCenterMap fillParent />
+        <SearchCenterMap
+          fillParent
+          // ✅ 사용자가 검색으로 출발지를 확정했을 때만 호출됨
+          onSelectStart={(p) => {
+            const qs = new URLSearchParams({
+              start: p.name,
+              startLat: String(p.lat),
+              startLng: String(p.lng),
+            }).toString();
+            navigate(`/running/detail?${qs}`);
+          }}
+        />
       </div>
 
       <div className="relative z-5">

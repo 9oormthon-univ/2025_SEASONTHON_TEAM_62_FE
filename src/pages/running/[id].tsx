@@ -1,29 +1,42 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// DetailPage.tsx
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
 import FloatingBackButton from './components/floatingButton';
 
-const mockRoute = {
-  nodes: [{ id: 'start', lat: 35.8887, lng: 128.6111 }],
-};
-
 export default function DetailPage() {
-  const [startLocation, setStartLocation] = useState('경북대학교 정문');
+  const { search } = useLocation();
+  const qs = useMemo(() => new URLSearchParams(search), [search]);
+
+  const qsStart = qs.get('start') ?? '경북대학교 정문';
+  const qsLat = qs.get('startLat');
+  const qsLng = qs.get('startLng');
+
+  const startLat = qsLat ? Number(qsLat) : 35.8887;
+  const startLng = qsLng ? Number(qsLng) : 128.6111;
+
+  const [startLocation, setStartLocation] = useState(qsStart);
   const [distance, setDistance] = useState<string>('');
   const [minPace, setMinPace] = useState('');
   const [maxPace, setMaxPace] = useState('');
 
   const navigate = useNavigate();
 
+  const nodes = useMemo(
+    () => [{ id: 'start', lat: startLat, lng: startLng }],
+    [startLat, startLng],
+  );
+
   const handleSearchRoute = () => {
-    const id = Date.now().toString(); 
+    const id = Date.now().toString();
     const params = new URLSearchParams({
       start: startLocation.trim(),
       distance: (distance || '0').trim(),
       paceMin: (minPace || '0').trim(),
       paceSec: (maxPace || '0').trim(),
+      startLat: String(startLat),
+      startLng: String(startLng),
     });
-
     navigate(`/running/${id}/path?${params.toString()}`);
   };
 
@@ -35,7 +48,7 @@ export default function DetailPage() {
         </div>
 
         <RouteFromLinks
-          nodes={mockRoute.nodes}
+          nodes={nodes} // ✅ 검색한 좌표로 핀 표시
           showEndPin={false}
         />
       </div>
