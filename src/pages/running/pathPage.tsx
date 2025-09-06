@@ -198,34 +198,28 @@ export default function PathPage() {
     setStartingRun(true);
 
     try {
-      const waypoints = selectedRoute.nodes.map((node) => [
-        Number(node.lat.toFixed(6)),
-        Number(node.lng.toFixed(6)),
+      const waypoints: [number, number][] = selectedRoute.nodes.map((n) => [
+        Number(n.lat.toFixed(6)),
+        Number(n.lng.toFixed(6)),
       ]);
 
-      const routeData = {
-        userId: USER_ID,
-        routeType: selectedId,
-        startPoint: waypoints[0],
-        waypoints: waypoints,
-        distanceKm: selectedRoute.distanceKm,
-        estimatedTimeMin: selectedRoute.etaMin,
-        safetyScore: selectedRoute.safetyScore,
-        targetPaceMinPerKm: paceMin + paceSec / 60,
-      };
+      const start = selectedRoute.nodes[0];
+      const savedPolyline = `${start.lat.toFixed(6)},${start.lng.toFixed(6)}`;
 
-      const response = await api.post('/api/selected-route', routeData);
-      console.log('선택된 경로 저장 성공:', response.data);
+      await api.post('/api/recent-paths/complete', {
+        waypoints,
+        savedPolyline,
+      });
 
       setIsOpen(false);
-      navigate(`/running/start?routeId=${response.data.id || ''}`);
+      navigate('/running/start');
     } catch (error: any) {
-      console.error('선택된 경로 저장 실패:', error);
-      const errorMessage =
+      console.error('경로 완주 저장 실패:', error);
+      const msg =
         error?.response?.data?.message ||
         error?.message ||
         '러닝을 시작하는데 실패했습니다.';
-      alert(`${errorMessage} 다시 시도해주세요.`);
+      alert(`${msg} 다시 시도해주세요.`);
     } finally {
       setStartingRun(false);
     }
