@@ -1,10 +1,15 @@
-
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import IcSvgLeftArrow2 from '../../shared/icons/ic_leftarrow2';
 import { FavoriteIcon } from '../../shared/components/favoriteIcon';
 import api from '../../shared/apis/api';
+import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
+import useWaypointStore from '../../store/useWaypointStore';
 
+type LatLng = { lat: number; lng: number };
+type GraphNode = { id: string; lat: number; lng: number };
 type Waypoint = [number, number];
+type GraphLink = { id: string; from: string; to: string; color?: string };
 
 type Props = {
   startedAt?: Date | string; // 러닝 끝난 시각 (표기용)
@@ -53,6 +58,40 @@ function planToSafetyLevel(
   return plan === 'safe' ? 'SAFE' : plan === 'normal' ? 'BALANCED' : 'FAST';
 }
 
+function toNodes(waypoints: [number, number][]): GraphNode[] {
+  return waypoints.map(([lat, lng], i) => ({
+    id: i === 0 ? 'start' : i === waypoints.length - 1 ? 'end' : `n${i}`,
+    lat,
+    lng,
+  }));
+}
+
+function seqLinks(nodes: GraphNode[]): GraphLink[] {
+  const links: GraphLink[] = [];
+  const COLOR_DONE = '#D9D9D9';
+  for (let i = 0; i < nodes.length - 1; i++) {
+    links.push({
+      id: `seg-${i}`,
+      from: nodes[i].id,
+      to: nodes[i + 1].id,
+      color: COLOR_DONE,
+    });
+  }
+  return links;
+}
+
+// ---- API 응답 타입 ----
+type RecentPath = {
+  id: number;
+  waypoints: [number, number][];
+  usedAt: string;
+};
+
+type RecentPathsResponse = {
+  success: string | boolean;
+  data: RecentPath[];
+};
+
 export default function CompletePage({
   startedAt,
   totalKm = 0,
@@ -63,13 +102,68 @@ export default function CompletePage({
   routeDistanceKm = 5,
   /** 즐겨찾기 연동용 */
   userId,
-  waypoints,
+  waypoints: waypointsProp,
   safetyScore = 0,
   isFavorite = false,
   favoriteId: favoriteIdProp = null,
   onBack,
   onToggleFavorite,
 }: Props) {
+  const location = useLocation();
+  const { state } = location;
+
+  const [loading, setLoading] = useState(false);
+  const [apiWaypoints, setApiWaypoints] = useState<Waypoint[]>([]);
+
+  // API에서 최신 경로 데이터 불러오기
+  useEffect(() => {
+    async function fetchRecentPath() {
+      // 이미 로컬 상태에 경로 데이터가 있으면 API 호출 건너뛰기
+      const { waypoints: storedWaypoints } = useWaypointStore.getState();
+      if (storedWaypoints.length > 0) {
+        console.log('✅ Zustand 스토어에 저장된 경로를 사용합니다.');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const { data } =
+          await api.get<RecentPathsResponse>('/api/recent-paths');
+        console.log('✅ API 응답 데이터:', data); // API 응답 확인
+
+        if (data.success && data.data.length > 0) {
+          const recentPath = data.data.sort(
+            (a, b) =>
+              new Date(b.usedAt).getTime() - new Date(a.usedAt).getTime(),
+          )[0];
+          console.log('✅ 가장 최신 경로 데이터:', recentPath);
+          setApiWaypoints(recentPath.waypoints);
+        } else {
+          console.warn('⚠️ API 응답에 유효한 경로 데이터가 없습니다.');
+        }
+      } catch (e) {
+        console.error('❌ 최근 경로 불러오기 실패:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRecentPath();
+  }, []);
+
+  // URL State에서 데이터 가져오기 (없으면 props의 기본값 사용)
+  const finalKm = state?.totalKm ?? totalKm;
+  const finalDuration = state?.durationText ?? durationText;
+  const finalPace = state?.avgPaceText ?? avgPaceText;
+
+  // Zustand Store에서 최종 경로 데이터 가져오기
+  const { waypoints: storedWaypoints } = useWaypointStore();
+  const finalWaypoints =
+    storedWaypoints.length > 0 ? storedWaypoints : apiWaypoints;
+
+  const finalNodes = useMemo(() => toNodes(finalWaypoints), [finalWaypoints]);
+  const finalLinks = useMemo(() => seqLinks(finalNodes), [finalNodes]);
+
   const dateText = useMemo(() => {
     const d = startedAt ? new Date(startedAt) : new Date();
     const dayNames = [
@@ -125,7 +219,7 @@ export default function CompletePage({
     try {
       if (next) {
         // CREATE
-        if (!userId || !waypoints || waypoints.length < 2) {
+        if (!userId || !finalWaypoints || finalWaypoints.length < 2) {
           throw new Error(
             '즐겨찾기 생성에 필요한 정보가 부족합니다. (userId/waypoints)',
           );
@@ -133,10 +227,10 @@ export default function CompletePage({
         const payload = {
           userId,
           name: routeName,
-          waypoints,
+          waypoints: finalWaypoints,
           savedPolyline: '',
           distanceM: Math.round((routeDistanceKm ?? 0) * 1000),
-          durationS: parseDurationToSeconds(durationText),
+          durationS: parseDurationToSeconds(finalDuration), // durationText를 finalDuration으로 변경
           safetyScore: safetyScore ?? 0,
           safetyLevel: planToSafetyLevel(plan),
           tags: [plan],
@@ -187,7 +281,7 @@ export default function CompletePage({
         <div className="mt-4">
           <div className="text-[16px] font-semibold text-gray-500">총 거리</div>
           <div className="mt-1 text-[50px] font-extrabold leading-none tabular-nums text-black">
-            {totalKm.toFixed(2)}
+            {finalKm.toFixed(2)}
           </div>
         </div>
 
@@ -197,19 +291,31 @@ export default function CompletePage({
               평균 페이스
             </div>
             <div className="mt-2 text-[30px] font-extrabold leading-none tabular-nums text-black">
-              {avgPaceText}
+              {finalPace}
             </div>
           </div>
           <div>
             <div className="text-[16px] font-semibold text-gray-500">시간</div>
             <div className="mt-2 text-[30px] font-extrabold leading-none tabular-nums text-black">
-              {durationText}
+              {finalDuration}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 bg-gray-200" />
+      <div className="flex-1 bg-gray-200 relative">
+        {loading && (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-white/70">
+            <p>최근 경로를 불러오는 중입니다...</p>
+          </div>
+        )}
+        <RouteFromLinks
+          nodes={finalNodes}
+          links={finalLinks}
+          showStartPin={true}
+          showEndPin={true}
+        />
+      </div>
 
       {/* 하단 카드 (모바일 풀폭, PC 중앙정렬) */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50">

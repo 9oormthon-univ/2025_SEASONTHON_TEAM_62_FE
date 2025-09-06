@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import RouteFromLinks from '../../shared/components/kakaomap/routeFromLinks';
+
 import IcSvgPlay from '../../shared/icons/ic_play';
 import api from '../../shared/apis/api';
+import useWaypointStore from '../../store/useWaypointStore';
 
 type LatLng = { lat: number; lng: number };
 type GraphNode = { id: string; lat: number; lng: number };
@@ -42,23 +44,22 @@ function buildMockLinks(): GraphLink[] {
 }
 
 // ---------------- 거리 계산 유틸리티 ----------------
+
 function calculateDistance(
   lat1: number,
   lng1: number,
   lat2: number,
   lng2: number,
 ): number {
-  const R = 6371000; // 지구 반지름 (미터)
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  // kakao.maps.Polyline을 사용하여 두 점을 연결하는 선 객체를 생성
+  const line = new kakao.maps.Polyline({
+    path: [
+      new kakao.maps.LatLng(lat1, lng1),
+      new kakao.maps.LatLng(lat2, lng2),
+    ],
+  });
+  // 생성된 선의 길이를 미터 단위로 반환
+  return line.getLength();
 }
 
 function findNearestPointOnPath(
@@ -216,12 +217,15 @@ export default function StartPage() {
   const { search } = useLocation();
   const qs = useMemo(() => new URLSearchParams(search), [search]);
   const favoriteId = qs.get('favoriteId');
+  const initialTargetDistance = Number(qs.get('targetDistanceKm')) || 0;
 
   const [nodes, setNodes] = useState<GraphNode[]>(MOCK_NODES);
   const [links, setLinks] = useState<GraphLink[]>(buildMockLinks());
   const [routeName, setRouteName] = useState<string>('');
   const [targetKm, setTargetKm] = useState<number>(0);
-  const [totalRouteDistance, setTotalRouteDistance] = useState<number>(0);
+  const [totalRouteDistance, setTotalRouteDistance] = useState<number>(
+    initialTargetDistance * 1000 || 0,
+  );
   const [planDurationMin, setPlanDurationMin] = useState<number>(0);
 
   const [loading, setLoading] = useState<boolean>(!!favoriteId);
@@ -257,7 +261,7 @@ export default function StartPage() {
 
     async function loadFavorite() {
       if (!favoriteId) {
-        // 목데이터의 전체 거리 계산
+        // 즐겨찾기 ID가 없으므로 목데이터 사용
         const mockDistance = calculateTotalDistance(MOCK_NODES);
         setTotalRouteDistance(mockDistance);
         setTargetKm(mockDistance / 1000);
@@ -363,9 +367,7 @@ export default function StartPage() {
     }
 
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
+      // if (watchIdRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
   }, [control, nodes]);
 
@@ -402,13 +404,35 @@ export default function StartPage() {
 
   const handlePlay = () => setControl('running');
   const handlePause = () => setControl('paused');
+  const { setWaypoints } = useWaypointStore();
+  const navigate = useNavigate();
   const handleStop = () => {
+    // 멈춤 시점의 거리와 시간을 변수에 저장
+    const finalDistance = distanceRun; // 미터
+    const finalElapsed = elapsed; // 밀리초
+
+    // 모든 러닝 상태 초기화
     setControl('idle');
     setElapsed(0);
     setDistanceRun(0);
     setCompletedSegments(-1);
     setCurrentPosition(null);
     lastPositionRef.current = null;
+
+    // `nodes`를 `waypoints` 타입으로 변환하여 Zustand에 저장
+    const finalWaypoints = nodes.map(
+      (node) => [node.lat, node.lng] as [number, number],
+    );
+    setWaypoints(finalWaypoints);
+
+    // 완료 페이지로 이동하며 데이터 전달
+    navigate('/running/complete', {
+      state: {
+        totalKm: finalDistance / 1000,
+        durationText: formatClock(finalElapsed),
+        avgPaceText: formatPace(finalDistance / 1000, finalElapsed),
+      },
+    });
   };
 
   const clock = formatClock(elapsed);
@@ -496,7 +520,6 @@ export default function StartPage() {
                 <>
                   <button
                     onClick={handleStop}
-                    // TODO : 버튼 클릭시 페이지 이동 로직 수정
                     className="grid h-[100px] w-[100px] place-items-center rounded-full bg-black text-white"
                   >
                     <span className="block h-6 w-6 rounded-[2px] bg-white" />
