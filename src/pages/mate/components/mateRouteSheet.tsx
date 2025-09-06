@@ -13,6 +13,7 @@ interface MateRouteSheetProps {
     targetPace: { mm: string; ss: string };
     startTime: { hh: string; mm: string };
     participants: number;
+    hashtags?: string[]; // 태그 전달(옵션)
   }) => void;
 }
 
@@ -23,8 +24,10 @@ const levelStyleMap: Record<MateRouteSheetProps['safe'], string> = {
 };
 
 const to2 = (n: number | string) => String(n ?? 0).padStart(2, '0');
-const sanitize = (val: string, maxLen = 2) =>
+const sanitizeNum = (val: string, maxLen = 2) =>
   val.replace(/[^\d]/g, '').slice(0, maxLen);
+
+const sanitizeTag = (v: string) => v.replace(/[^\w가-힣#]/g, '').slice(0, 20); // 영문/숫자/한글/#만 허용
 
 const MateRouteSheet = ({
   safe,
@@ -35,17 +38,68 @@ const MateRouteSheet = ({
   participants,
   onCreate,
 }: MateRouteSheetProps) => {
-  // ✅ 인풋 상태 (초기값은 props에서 받아오기)
+  // 숫자 입력 상태
   const [paceMm, setPaceMm] = useState<string>(to2(targetPace.mm));
   const [paceSs, setPaceSs] = useState<string>(to2(targetPace.ss));
   const [startHh, setStartHh] = useState<string>(to2(startTime.hh));
   const [startMm, setStartMm] = useState<string>(to2(startTime.mm));
   const [count, setCount] = useState<string>(String(participants ?? 0));
 
+  // 태그 입력 상태
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagText, setTagText] = useState('');
+  const [isComposing, setIsComposing] = useState(false);
+
   const clamp = (v: string, min: number, max: number) => {
     const n = Number(v || 0);
     return String(Math.min(Math.max(n, min), max));
   };
+
+  const addTag = (raw: string) => {
+    const t = sanitizeTag(raw.trim());
+    if (!t) return;
+    if (tags.length >= 3) return;
+    if (tags.includes(t)) return;
+    setTags((prev) => [...prev, t]);
+    setTagText('');
+  };
+
+  const removeTag = (i: number) =>
+    setTags((prev) => prev.filter((_, idx) => idx !== i));
+
+  // ===== IME(한글 조합) 안전 처리 =====
+  const handleTagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    // @ts-ignore 브라우저가 주는 isComposing 플래그
+    if (isComposing || e.nativeEvent.isComposing) {
+      setTagText(v);
+      return;
+    }
+    setTagText(sanitizeTag(v));
+  };
+
+  const handleTagCompositionStart = () => setIsComposing(true);
+
+  const handleTagCompositionEnd = (
+    e: React.CompositionEvent<HTMLInputElement>,
+  ) => {
+    setIsComposing(false);
+    setTagText(sanitizeTag(e.currentTarget.value)); // 조합 끝난 후에만 정제
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // @ts-ignore
+    if (isComposing || e.nativeEvent.isComposing || e.keyCode === 229) return;
+
+    if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
+      e.preventDefault();
+      addTag(tagText);
+    }
+    if (e.key === 'Backspace' && !tagText && tags.length) {
+      removeTag(tags.length - 1);
+    }
+  };
+  // ===================================
 
   const handleCreate = () => {
     const _mm = to2(clamp(paceMm, 0, 59));
@@ -58,6 +112,7 @@ const MateRouteSheet = ({
       targetPace: { mm: _mm, ss: _ss },
       startTime: { hh: _hh, mm: _smm },
       participants: _cnt,
+      hashtags: tags,
     });
   };
 
@@ -103,7 +158,7 @@ const MateRouteSheet = ({
                   placeholder="00"
                   className={box}
                   value={paceMm}
-                  onChange={(e) => setPaceMm(sanitize(e.target.value))}
+                  onChange={(e) => setPaceMm(sanitizeNum(e.target.value))}
                   onBlur={(e) => setPaceMm(to2(clamp(e.target.value, 0, 59)))}
                   aria-label="페이스 분"
                 />
@@ -114,7 +169,7 @@ const MateRouteSheet = ({
                   placeholder="00"
                   className={box}
                   value={paceSs}
-                  onChange={(e) => setPaceSs(sanitize(e.target.value))}
+                  onChange={(e) => setPaceSs(sanitizeNum(e.target.value))}
                   onBlur={(e) => setPaceSs(to2(clamp(e.target.value, 0, 59)))}
                   aria-label="페이스 초"
                 />
@@ -132,7 +187,7 @@ const MateRouteSheet = ({
                   placeholder="00"
                   className={box}
                   value={startHh}
-                  onChange={(e) => setStartHh(sanitize(e.target.value))}
+                  onChange={(e) => setStartHh(sanitizeNum(e.target.value))}
                   onBlur={(e) => setStartHh(to2(clamp(e.target.value, 0, 23)))}
                   aria-label="시작 시"
                 />
@@ -143,7 +198,7 @@ const MateRouteSheet = ({
                   placeholder="00"
                   className={box}
                   value={startMm}
-                  onChange={(e) => setStartMm(sanitize(e.target.value))}
+                  onChange={(e) => setStartMm(sanitizeNum(e.target.value))}
                   onBlur={(e) => setStartMm(to2(clamp(e.target.value, 0, 59)))}
                   aria-label="시작 분"
                 />
@@ -160,13 +215,58 @@ const MateRouteSheet = ({
                   placeholder="0"
                   className={boxWide}
                   value={count}
-                  onChange={(e) => setCount(sanitize(e.target.value, 3))}
+                  onChange={(e) => setCount(sanitizeNum(e.target.value, 3))}
                   onBlur={(e) =>
                     setCount(String(Math.max(Number(e.target.value || 0), 0)))
                   }
                   aria-label="모집 인원"
                 />
                 <span className="text-black">명</span>
+              </div>
+            </div>
+
+            {/* 해시태그 */}
+            <div className="flex items-start gap-6">
+              <div className="w-24 text-med14 text-black pt-2">해시태그</div>
+
+              <div className="flex flex-wrap gap-2 max-w-[280px]">
+                {/* 추가된 태그 */}
+                {tags.map((t, i) => (
+                  <div
+                    key={`${t}-${i}`}
+                    className="relative"
+                  >
+                    <input
+                      readOnly
+                      value={t}
+                      className="h-9 w-[120px] rounded-[8px] border border-gray-200 bg-white px-3 pr-8 text-[14px] text-gray-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTag(i)}
+                      aria-label={`${t} 태그 삭제`}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+
+                {/* 입력 인풋 (최대 3개일 때 숨김) */}
+                {tags.length < 3 && (
+                  <input
+                    inputMode="text"
+                    placeholder="해시태그를 입력하세요(최대 3개)"
+                    className="h-9 w-[220px] rounded-[8px] border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-gray-300"
+                    value={tagText}
+                    onChange={handleTagChange}
+                    onCompositionStart={handleTagCompositionStart}
+                    onCompositionEnd={handleTagCompositionEnd}
+                    onKeyDown={handleTagKeyDown}
+                    onBlur={() => addTag(tagText)}
+                    aria-label="해시태그 입력"
+                  />
+                )}
               </div>
             </div>
           </div>
