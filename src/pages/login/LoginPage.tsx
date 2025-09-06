@@ -1,15 +1,22 @@
+// LoginPage.tsx
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
-
 type Provider = 'google' | 'kakao' | 'naver';
 
 function goOAuth(provider: Provider, next?: string) {
+  const nextPath = next ?? window.location.pathname + window.location.search;
+  const callbackUrl = `${window.location.origin}/oauth/callback?next=${encodeURIComponent(nextPath)}`;
+
   const url = new URL(`${API_BASE}/oauth2/authorization/${provider}`);
-  const state = next ?? window.location.pathname + window.location.search;
-  url.searchParams.set('state', encodeURIComponent(state));
+  url.searchParams.set('state', callbackUrl); // ❗ encodeURIComponent 따로 하지 않음 (URLSearchParams가 처리)
   window.location.href = url.toString();
 }
 
 export default function LoginPage() {
+  console.log('Current origin:', window.location.origin);
+  console.log(
+    'Expected redirect URI:',
+    window.location.origin + '/login/oauth2/code/google',
+  );
   return (
     <div className="min-h-dvh flex flex-col bg-gray3">
       <div className="flex-1" />

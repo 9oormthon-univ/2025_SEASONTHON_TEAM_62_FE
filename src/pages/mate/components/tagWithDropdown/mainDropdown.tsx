@@ -29,7 +29,6 @@ export default function MainDropDown() {
     setMaxDistance('');
   };
 
-  //인풋 포커스 안됐을때는  바텀시트 200px 높이여야하고 포커되면 400px여야해
   return (
     <div className="flex flex-row flex-wrap justify-left p-4 gap-3">
       <Tag
