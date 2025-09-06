@@ -24,6 +24,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'mate', element: <MatePage /> },
       { path: 'myinfo', element: <MyinfoPage /> },
+      { path: 'running', element: <RunningPage /> },
       { path: 'running/:id', element: <DetailPage /> },
       { path: 'running/:id/path', element: <PathPage /> },
       { path: 'running/start', element: <StartPage /> },
